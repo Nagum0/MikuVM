@@ -8,6 +8,7 @@ pub enum Inst {
     Pop,
     Dup(usize),
     Swap,
+    Plus,
 }
 
 impl Inst {
@@ -27,6 +28,7 @@ impl Inst {
                 bytes.extend(operand.to_le_bytes());
             }
             Self::Swap => bytes.push(0x03),
+            Self::Plus => bytes.push(0x04),
         }
 
         bytes
@@ -43,6 +45,7 @@ impl Inst {
                     .expect("COULD NOT CONVERT OPERAND AT DUP"),
             )),
             0x03 => Inst::Swap,
+            0x04 => Inst::Plus,
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
     }
@@ -78,6 +81,19 @@ impl Inst {
                 }
 
                 miku.stack.swap(miku.stack_top - 1, miku.stack_top - 2);
+            }
+            Self::Plus => {
+                if miku.stack.len() < 2 {
+                    panic!("STACK UNDERFLOW");
+                }
+
+                match (
+                    miku.stack[miku.stack_top - 1],
+                    miku.stack[miku.stack_top - 2],
+                ) {
+                    (StackEntry::U8(a), StackEntry::U8(b)) => {}
+                    _ => todo!(),
+                }
             }
         }
     }
