@@ -34,7 +34,6 @@ fn parse_file(path: &str) -> Vec<Inst> {
                     &split_line[1..split_line.len()],
                 ))),
                 "pop" => acc.push(Inst::Pop),
-                "print_char_dbg" => acc.push(Inst::PrintCharDbg),
                 _ => panic!("UNKNOWN INSTRUCTION: {}", split_line[0]),
             }
 

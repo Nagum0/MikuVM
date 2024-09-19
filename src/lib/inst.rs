@@ -5,7 +5,6 @@ use crate::stack::StackEntry;
 pub enum Inst {
     Push(StackEntry),
     Pop,
-    PrintCharDbg,
 }
 
 impl Inst {
@@ -20,7 +19,6 @@ impl Inst {
                 bytes.extend(operand.to_bytes());
             }
             Self::Pop => bytes.push(0x01),
-            Self::PrintCharDbg => bytes.push(0x02),
         }
 
         bytes
@@ -31,7 +29,6 @@ impl Inst {
         match bytes[0] {
             0x00 => Inst::Push(StackEntry::from_bytes(&bytes[1..bytes.len()])),
             0x01 => Inst::Pop,
-            0x02 => Inst::PrintCharDbg,
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
     }
@@ -46,16 +43,6 @@ impl Inst {
                     panic!("STACK UNDERFLOW");
                 }
                 miku.stack.pop().unwrap();
-            }
-            Self::PrintCharDbg => {
-                if miku.stack.is_empty() {
-                    panic!("STACK UNDERFLOW");
-                }
-
-                match miku.stack[miku.stack.len() - 1] {
-                    StackEntry::U8(value) => println!("{}", value as char),
-                    _ => panic!("TOP VALUE ON STACK IS NOT A U8"),
-                }
             }
         }
     }
