@@ -37,6 +37,7 @@ fn parse_file(path: &str) -> Vec<Inst> {
                 "dup" => acc.push(Inst::Dup(
                     split_line[1].parse().expect("EXPECTED A NUMBER AFTER DUP"),
                 )),
+                "swap" => acc.push(Inst::Swap),
                 _ => panic!("UNKNOWN INSTRUCTION: {}", split_line[0]),
             }
 
