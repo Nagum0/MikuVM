@@ -2,7 +2,9 @@ use std::env;
 use std::fs::{self, File};
 use std::io::Write;
 use std::process::exit;
-use vm::{Inst, StackEntry};
+
+use vm::inst::Inst;
+use vm::stack::StackEntry;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

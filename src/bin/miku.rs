@@ -1,5 +1,7 @@
 use std::{env, fs, process::exit};
-use vm::{Inst, Miku};
+
+use vm::inst::Inst;
+use vm::miku::Miku;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
