@@ -1,0 +1,18 @@
+[package]
+name = "miku_vm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "vm"
+path = ".\\src\\lib\\vm.rs"
+
+[[bin]]
+name = "miku"
+path = ".\\src\\bin\\miku.rs"
+
+[[bin]]
+name = "masm"
+path = ".\\src\\bin\\masm.rs"
+
+[dependencies]
