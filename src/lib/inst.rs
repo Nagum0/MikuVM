@@ -3,8 +3,10 @@ use crate::stack::StackEntry;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Inst {
+    // Stack operations
     Push(StackEntry),
     Pop,
+    Dup(usize),
 }
 
 impl Inst {
@@ -19,6 +21,10 @@ impl Inst {
                 bytes.extend(operand.to_bytes());
             }
             Self::Pop => bytes.push(0x01),
+            Self::Dup(operand) => {
+                bytes.push(0x02);
+                bytes.extend(operand.to_le_bytes());
+            }
         }
 
         bytes
@@ -29,6 +35,11 @@ impl Inst {
         match bytes[0] {
             0x00 => Inst::Push(StackEntry::from_bytes(&bytes[1..bytes.len()])),
             0x01 => Inst::Pop,
+            0x02 => Inst::Dup(usize::from_le_bytes(
+                bytes[1..bytes.len()]
+                    .try_into()
+                    .expect("COULD NOT CONVERT OPERAND AT DUP"),
+            )),
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
     }
@@ -42,7 +53,19 @@ impl Inst {
                 if miku.stack.is_empty() {
                     panic!("STACK UNDERFLOW");
                 }
+
                 miku.stack.pop().unwrap();
+            }
+            Self::Dup(operand) => {
+                if miku.stack.is_empty() {
+                    panic!("STACK UNDERFLOW");
+                }
+
+                if *operand >= miku.stack.len() {
+                    panic!("STACK OVERFLOW");
+                }
+
+                miku.stack.push(miku.stack[*operand]);
             }
         }
     }
