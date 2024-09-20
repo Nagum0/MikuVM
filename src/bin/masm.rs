@@ -39,6 +39,7 @@ fn parse_file(path: &str) -> Vec<Inst> {
                 )),
                 "swap" => acc.push(Inst::Swap),
                 "plus" => acc.push(Inst::Plus),
+                "minus" => acc.push(Inst::Minus),
                 _ => panic!("UNKNOWN INSTRUCTION: {}", split_line[0]),
             }
 

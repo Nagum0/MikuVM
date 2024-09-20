@@ -9,6 +9,7 @@ pub enum Inst {
     Dup(usize),
     Swap,
     Plus,
+    Minus,
 }
 
 impl Inst {
@@ -29,6 +30,7 @@ impl Inst {
             }
             Self::Swap => bytes.push(0x03),
             Self::Plus => bytes.push(0x04),
+            Self::Minus => bytes.push(0x05),
         }
 
         bytes
@@ -46,6 +48,7 @@ impl Inst {
             )),
             0x03 => Inst::Swap,
             0x04 => Inst::Plus,
+            0x05 => Inst::Minus,
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
     }
@@ -90,6 +93,16 @@ impl Inst {
                 let a = miku.stack.pop().unwrap();
                 let b = miku.stack.pop().unwrap();
                 miku.stack.push(StackEntry::add(a, b));
+                miku.stack_top -= 1;
+            }
+            Self::Minus => {
+                if miku.stack.len() < 2 {
+                    panic!("STACK UNDERFLOW");
+                }
+
+                let a = miku.stack.pop().unwrap();
+                let b = miku.stack.pop().unwrap();
+                miku.stack.push(StackEntry::subtract(a, b));
                 miku.stack_top -= 1;
             }
         }
