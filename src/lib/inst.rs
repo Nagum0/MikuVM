@@ -87,13 +87,10 @@ impl Inst {
                     panic!("STACK UNDERFLOW");
                 }
 
-                match (
-                    miku.stack[miku.stack_top - 1],
-                    miku.stack[miku.stack_top - 2],
-                ) {
-                    (StackEntry::U8(a), StackEntry::U8(b)) => {}
-                    _ => todo!(),
-                }
+                let a = miku.stack.pop().unwrap();
+                let b = miku.stack.pop().unwrap();
+                miku.stack.push(StackEntry::add(a, b));
+                miku.stack_top -= 1;
             }
         }
     }

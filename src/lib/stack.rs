@@ -7,6 +7,16 @@ pub enum StackEntry {
 }
 
 impl StackEntry {
+    pub fn add(a: StackEntry, b: StackEntry) -> StackEntry {
+        match (a, b) {
+            (Self::U8(a), Self::U8(b)) => Self::U8(a + b),
+            (Self::U16(a), Self::U16(b)) => Self::U16(a + b),
+            (Self::U32(a), Self::U32(b)) => Self::U32(a + b),
+            (Self::U64(a), Self::U64(b)) => Self::U64(a + b),
+            _ => panic!("ADDITION BETWEEN SEPARATE TYPES: {:?} + {:?}", a, b),
+        }
+    }
+
     /// Takes a StackEntry and turns it into a vector of bytes.
     /// * First byte is the type and the rest are the value.
     pub fn to_bytes(&self) -> Vec<u8> {

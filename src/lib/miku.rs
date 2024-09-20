@@ -22,8 +22,8 @@ impl Miku {
         for i in 0..self.program.len() {
             let inst = self.program[i];
             inst.execute(self);
+            self.dump_stack();
         }
-        self.dump_stack();
     }
 
     fn dump_stack(&self) {
