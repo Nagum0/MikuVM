@@ -3,9 +3,13 @@ use crate::stack::StackEntry;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Inst {
+    // Stack operations
     Push(StackEntry),
     Pop,
-    PrintCharDbg,
+    Dup(usize),
+    Swap,
+    Plus,
+    Minus,
 }
 
 impl Inst {
@@ -20,7 +24,13 @@ impl Inst {
                 bytes.extend(operand.to_bytes());
             }
             Self::Pop => bytes.push(0x01),
-            Self::PrintCharDbg => bytes.push(0x02),
+            Self::Dup(operand) => {
+                bytes.push(0x02);
+                bytes.extend(operand.to_le_bytes());
+            }
+            Self::Swap => bytes.push(0x03),
+            Self::Plus => bytes.push(0x04),
+            Self::Minus => bytes.push(0x05),
         }
 
         bytes
@@ -31,7 +41,14 @@ impl Inst {
         match bytes[0] {
             0x00 => Inst::Push(StackEntry::from_bytes(&bytes[1..bytes.len()])),
             0x01 => Inst::Pop,
-            0x02 => Inst::PrintCharDbg,
+            0x02 => Inst::Dup(usize::from_le_bytes(
+                bytes[1..bytes.len()]
+                    .try_into()
+                    .expect("COULD NOT CONVERT OPERAND AT DUP"),
+            )),
+            0x03 => Inst::Swap,
+            0x04 => Inst::Plus,
+            0x05 => Inst::Minus,
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
     }
@@ -40,22 +57,53 @@ impl Inst {
         match self {
             Self::Push(operand) => {
                 miku.stack.push(*operand);
+                miku.stack_top += 1;
             }
             Self::Pop => {
                 if miku.stack.is_empty() {
                     panic!("STACK UNDERFLOW");
                 }
+
                 miku.stack.pop().unwrap();
+                miku.stack_top -= 1;
             }
-            Self::PrintCharDbg => {
+            Self::Dup(operand) => {
                 if miku.stack.is_empty() {
                     panic!("STACK UNDERFLOW");
                 }
 
-                match miku.stack[miku.stack.len() - 1] {
-                    StackEntry::U8(value) => println!("{}", value as char),
-                    _ => panic!("TOP VALUE ON STACK IS NOT A U8"),
+                if *operand >= miku.stack.len() {
+                    panic!("STACK OVERFLOW");
                 }
+
+                miku.stack.push(miku.stack[*operand]);
+            }
+            Self::Swap => {
+                if miku.stack.len() < 2 {
+                    panic!("STACK UNDERFLOW");
+                }
+
+                miku.stack.swap(miku.stack_top - 1, miku.stack_top - 2);
+            }
+            Self::Plus => {
+                if miku.stack.len() < 2 {
+                    panic!("STACK UNDERFLOW");
+                }
+
+                let a = miku.stack.pop().unwrap();
+                let b = miku.stack.pop().unwrap();
+                miku.stack.push(StackEntry::add(a, b));
+                miku.stack_top -= 1;
+            }
+            Self::Minus => {
+                if miku.stack.len() < 2 {
+                    panic!("STACK UNDERFLOW");
+                }
+
+                let a = miku.stack.pop().unwrap();
+                let b = miku.stack.pop().unwrap();
+                miku.stack.push(StackEntry::subtract(a, b));
+                miku.stack_top -= 1;
             }
         }
     }
