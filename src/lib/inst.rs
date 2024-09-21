@@ -14,6 +14,7 @@ pub enum Inst {
     Div,
     Eq,
     Jmp(usize),
+    JmpZ(usize),
 }
 
 impl Inst {
@@ -42,6 +43,10 @@ impl Inst {
                 bytes.push(0x09);
                 bytes.extend(operand.to_le_bytes());
             }
+            Self::JmpZ(operand) => {
+                bytes.push(0x0A);
+                bytes.extend(operand.to_le_bytes());
+            }
         }
 
         bytes
@@ -64,6 +69,9 @@ impl Inst {
             0x07 => Inst::Div,
             0x08 => Inst::Eq,
             0x09 => Inst::Jmp(usize::from_le_bytes(
+                bytes[1..bytes.len()].try_into().unwrap(),
+            )),
+            0x0A => Inst::JmpZ(usize::from_le_bytes(
                 bytes[1..bytes.len()].try_into().unwrap(),
             )),
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
@@ -185,6 +193,20 @@ impl Inst {
                 }
 
                 miku.ins_ptr = *operand;
+            }
+            Self::JmpZ(operand) => {
+                if *operand >= miku.program.len() {
+                    panic!("JUMP OUT OF BOUNDS: {}", operand);
+                }
+
+                let top = miku.stack.pop().unwrap();
+                miku.stack_top -= 1;
+
+                if StackEntry::eq(top, StackEntry::U8(0)) {
+                    miku.ins_ptr = *operand;
+                } else {
+                    miku.ins_ptr += 1;
+                }
             }
         }
     }
