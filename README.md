@@ -5,6 +5,13 @@
 - A very simple and minimal virtual machine built in rust for studying purposes.
 - I'm just fucking around and finding out!
 
+### Usage
+
+```command
+$ masm fib.masm fib.mm
+$ miku fib.mm
+```
+
 ### Stack
 
 - Types:
@@ -28,3 +35,42 @@
 | 8      | eq    | -     | -     | -    | -    | Pops the top 2 values off the stack, checks whether they're equal, if they are it pushes U8(0) onto the stack else U8(1)          |
 | 9      | jmp   | value | -     | -    | -    | Jumps to the given address (label or hardcoded address)                                                                           |
 | 10     | jmpz  | value | -     | -    | -    | Jumps to the given address (label or hardcoded address) if the top value on the stack is a 0 byte (U8). Pops the top of the stack |
+
+### Examples
+
+- Program that counts up to 5
+
+```asm
+push u8 0
+dup 0
+push u8 5
+eq
+jmpz 8
+push u8 1
+plus
+jmp 1
+push u8 69
+```
+
+- Program that computes the first 10 fibonacci numbers
+
+```asm
+push u8 0
+push u8 1
+push u8 1
+dup 2
+dup 2
+plus
+dup 1
+push u8 1
+plus
+dup 0
+push u8 10
+eq
+jmpz 17
+dup 3
+dup 2
+dup 2
+jmp 3
+dup 1
+```
