@@ -61,6 +61,7 @@ impl Inst {
                 } else {
                     miku.stack[miku.stack_top] = *operand;
                 }
+
                 miku.stack_top += 1;
             }
             Self::Pop => {
@@ -80,22 +81,24 @@ impl Inst {
                 }
 
                 let offset = miku.stack_top - 1 - *operand;
+
                 if miku.stack_top == miku.stack.len() {
                     miku.stack.push(miku.stack[offset]);
                 } else {
                     miku.stack[miku.stack_top] = miku.stack[offset];
                 }
+
                 miku.stack_top += 1;
             }
             Self::Swap => {
-                if miku.stack.len() < 2 {
+                if miku.stack_top < 2 {
                     panic!("STACK UNDERFLOW");
                 }
 
                 miku.stack.swap(miku.stack_top - 1, miku.stack_top - 2);
             }
             Self::Plus => {
-                if miku.stack.len() < 2 {
+                if miku.stack_top < 2 {
                     panic!("STACK UNDERFLOW");
                 }
 
@@ -105,7 +108,7 @@ impl Inst {
                 miku.stack_top -= 1;
             }
             Self::Minus => {
-                if miku.stack.len() < 2 {
+                if miku.stack_top < 2 {
                     panic!("STACK UNDERFLOW");
                 }
 
