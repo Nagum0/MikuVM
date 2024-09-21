@@ -42,6 +42,7 @@ fn parse_file(path: &str) -> Vec<Inst> {
                 "minus" => acc.push(Inst::Minus),
                 "mult" => acc.push(Inst::Mult),
                 "div" => acc.push(Inst::Div),
+                "eq" => acc.push(Inst::Eq),
                 _ => panic!("UNKNOWN INSTRUCTION: {}", split_line[0]),
             }
 

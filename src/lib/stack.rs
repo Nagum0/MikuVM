@@ -71,6 +71,19 @@ impl StackEntry {
         }
     }
 
+    pub fn eq(a: StackEntry, b: StackEntry) -> bool {
+        match (a, b) {
+            (Self::U8(a), Self::U8(b)) => a == b,
+            (Self::U16(a), Self::U16(b)) => a == b,
+            (Self::U32(a), Self::U32(b)) => a == b,
+            (Self::U64(a), Self::U64(b)) => a == b,
+            _ => panic!(
+                "EQUALITY CHECKING BETWEEN SEPARATE TYPES: {:?} == {:?}",
+                a, b
+            ),
+        }
+    }
+
     /// Takes a StackEntry and turns it into a vector of bytes.
     /// * First byte is the type and the rest are the value.
     pub fn to_bytes(&self) -> Vec<u8> {

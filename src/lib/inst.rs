@@ -12,6 +12,7 @@ pub enum Inst {
     Minus,
     Mult,
     Div,
+    Eq,
 }
 
 impl Inst {
@@ -35,6 +36,7 @@ impl Inst {
             Self::Minus => bytes.push(0x05),
             Self::Mult => bytes.push(0x06),
             Self::Div => bytes.push(0x07),
+            Self::Eq => bytes.push(0x08),
         }
 
         bytes
@@ -55,6 +57,7 @@ impl Inst {
             0x05 => Inst::Minus,
             0x06 => Inst::Mult,
             0x07 => Inst::Div,
+            0x08 => Inst::Eq,
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
     }
@@ -141,6 +144,22 @@ impl Inst {
                 let a = miku.stack.pop().unwrap();
                 let b = miku.stack.pop().unwrap();
                 miku.stack.push(StackEntry::divide(a, b));
+                miku.stack_top -= 1;
+            }
+            Self::Eq => {
+                if miku.stack_top < 2 {
+                    panic!("STACK UNDERFLOW");
+                }
+
+                let a = miku.stack.pop().unwrap();
+                let b = miku.stack.pop().unwrap();
+
+                if StackEntry::eq(a, b) {
+                    miku.stack.push(StackEntry::U8(0));
+                } else {
+                    miku.stack.push(StackEntry::U8(1));
+                }
+
                 miku.stack_top -= 1;
             }
         }
