@@ -10,6 +10,8 @@ pub enum Inst {
     Swap,
     Plus,
     Minus,
+    Mult,
+    Div,
 }
 
 impl Inst {
@@ -31,6 +33,8 @@ impl Inst {
             Self::Swap => bytes.push(0x03),
             Self::Plus => bytes.push(0x04),
             Self::Minus => bytes.push(0x05),
+            Self::Mult => bytes.push(0x06),
+            Self::Div => bytes.push(0x07),
         }
 
         bytes
@@ -49,6 +53,8 @@ impl Inst {
             0x03 => Inst::Swap,
             0x04 => Inst::Plus,
             0x05 => Inst::Minus,
+            0x06 => Inst::Mult,
+            0x07 => Inst::Div,
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
     }
@@ -115,6 +121,26 @@ impl Inst {
                 let a = miku.stack.pop().unwrap();
                 let b = miku.stack.pop().unwrap();
                 miku.stack.push(StackEntry::subtract(a, b));
+                miku.stack_top -= 1;
+            }
+            Self::Mult => {
+                if miku.stack_top < 2 {
+                    panic!("STACK UNDERFLOW");
+                }
+
+                let a = miku.stack.pop().unwrap();
+                let b = miku.stack.pop().unwrap();
+                miku.stack.push(StackEntry::multiply(a, b));
+                miku.stack_top -= 1;
+            }
+            Self::Div => {
+                if miku.stack_top < 2 {
+                    panic!("STACK UNDERFLOW");
+                }
+
+                let a = miku.stack.pop().unwrap();
+                let b = miku.stack.pop().unwrap();
+                miku.stack.push(StackEntry::divide(a, b));
                 miku.stack_top -= 1;
             }
         }

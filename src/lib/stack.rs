@@ -29,6 +29,48 @@ impl StackEntry {
         }
     }
 
+    /// Multiplies 2 stack entries and returns the result.
+    pub fn multiply(a: StackEntry, b: StackEntry) -> StackEntry {
+        match (a, b) {
+            (Self::U8(a), Self::U8(b)) => Self::U8(a * b),
+            (Self::U16(a), Self::U16(b)) => Self::U16(a * b),
+            (Self::U32(a), Self::U32(b)) => Self::U32(a * b),
+            (Self::U64(a), Self::U64(b)) => Self::U64(a * b),
+            _ => panic!("MULTIPLICATION BETWEEN SEPARATE TYPES: {:?} * {:?}", a, b),
+        }
+    }
+
+    /// Divides 2 stack entries and returns the result. Panics if b is 0.
+    pub fn divide(a: StackEntry, b: StackEntry) -> StackEntry {
+        match (a, b) {
+            (Self::U8(a), Self::U8(b)) => {
+                if b == 0 {
+                    panic!("DIVISION BY ZERO");
+                }
+                Self::U8(a / b)
+            }
+            (Self::U16(a), Self::U16(b)) => {
+                if b == 0 {
+                    panic!("DIVISION BY ZERO");
+                }
+                Self::U16(a / b)
+            }
+            (Self::U32(a), Self::U32(b)) => {
+                if b == 0 {
+                    panic!("DIVISION BY ZERO");
+                }
+                Self::U32(a / b)
+            }
+            (Self::U64(a), Self::U64(b)) => {
+                if b == 0 {
+                    panic!("DIVISION BY ZERO");
+                }
+                Self::U64(a / b)
+            }
+            _ => panic!("DIVISION BETWEEN SEPARATE TYPES: {:?} / {:?}", a, b),
+        }
+    }
+
     /// Takes a StackEntry and turns it into a vector of bytes.
     /// * First byte is the type and the rest are the value.
     pub fn to_bytes(&self) -> Vec<u8> {

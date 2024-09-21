@@ -5,6 +5,14 @@
 - A very simple and minimal virtual machine built in rust for studying purposes.
 - I'm just fucking around and finding out!
 
+### Stack
+
+- Types:
+  - U8
+  - U16
+  - U32
+  - U64
+
 ### Instrucions
 
 | number | name  | arg1  | arg2  | arg3 | arg4 | description                                                                                                                   |
@@ -15,3 +23,5 @@
 | 3      | swap  | -     | -     | -    | -    | Swaps the top 2 values on the stack                                                                                           |
 | 4      | plus  | -     | -     | -    | -    | Pops the top 2 values off the stack, adds them together and pushes the result back on the stack                               |
 | 5      | minus | -     | -     | -    | -    | Pops the top 2 values off the stack, subtracts the second popped value from the first and pushes the result back on the stack |
+| 6      | mult  | -     | -     | -    | -    | Pops the top 2 values off the stack, multiplies them together and pushes the result back on the stack                         |
+| 7      | div   | -     | -     | -    | -    | Pops the top 2 values off the stack, divides the first popped with the second and pushes the result back on the stack         |
