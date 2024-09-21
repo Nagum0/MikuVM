@@ -5,6 +5,7 @@ pub struct Miku {
     pub program: Vec<Inst>,
 
     pub stack: Vec<StackEntry>,
+    pub stack_base: usize,
     pub stack_top: usize,
 }
 
@@ -14,6 +15,7 @@ impl Miku {
             program: Vec::new(),
 
             stack: Vec::new(),
+            stack_base: 0,
             stack_top: 0,
         }
     }

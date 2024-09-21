@@ -56,27 +56,36 @@ impl Inst {
     pub fn execute(&self, miku: &mut Miku) {
         match self {
             Self::Push(operand) => {
-                miku.stack.push(*operand);
+                if miku.stack_top == miku.stack.len() {
+                    miku.stack.push(*operand);
+                } else {
+                    miku.stack[miku.stack_top] = *operand;
+                }
                 miku.stack_top += 1;
             }
             Self::Pop => {
-                if miku.stack.is_empty() {
+                if miku.stack_top == miku.stack_base {
                     panic!("STACK UNDERFLOW");
                 }
 
-                miku.stack.pop().unwrap();
                 miku.stack_top -= 1;
             }
             Self::Dup(operand) => {
-                if miku.stack.is_empty() {
+                if miku.stack_top == miku.stack_base {
                     panic!("STACK UNDERFLOW");
                 }
 
-                if *operand >= miku.stack.len() {
+                if *operand >= miku.stack_top {
                     panic!("STACK OVERFLOW");
                 }
 
-                miku.stack.push(miku.stack[*operand]);
+                let offset = miku.stack_top - 1 - *operand;
+                if miku.stack_top == miku.stack.len() {
+                    miku.stack.push(miku.stack[offset]);
+                } else {
+                    miku.stack[miku.stack_top] = miku.stack[offset];
+                }
+                miku.stack_top += 1;
             }
             Self::Swap => {
                 if miku.stack.len() < 2 {
