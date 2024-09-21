@@ -13,6 +13,7 @@ pub enum Inst {
     Mult,
     Div,
     Eq,
+    Jmp(usize),
 }
 
 impl Inst {
@@ -37,6 +38,10 @@ impl Inst {
             Self::Mult => bytes.push(0x06),
             Self::Div => bytes.push(0x07),
             Self::Eq => bytes.push(0x08),
+            Self::Jmp(operand) => {
+                bytes.push(0x09);
+                bytes.extend(operand.to_le_bytes());
+            }
         }
 
         bytes
@@ -58,6 +63,9 @@ impl Inst {
             0x06 => Inst::Mult,
             0x07 => Inst::Div,
             0x08 => Inst::Eq,
+            0x09 => Inst::Jmp(usize::from_le_bytes(
+                bytes[1..bytes.len()].try_into().unwrap(),
+            )),
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
     }
@@ -72,6 +80,7 @@ impl Inst {
                 }
 
                 miku.stack_top += 1;
+                miku.ins_ptr += 1;
             }
             Self::Pop => {
                 if miku.stack_top == miku.stack_base {
@@ -79,6 +88,7 @@ impl Inst {
                 }
 
                 miku.stack_top -= 1;
+                miku.ins_ptr += 1;
             }
             Self::Dup(operand) => {
                 if miku.stack_top == miku.stack_base {
@@ -98,6 +108,7 @@ impl Inst {
                 }
 
                 miku.stack_top += 1;
+                miku.ins_ptr += 1;
             }
             Self::Swap => {
                 if miku.stack_top < 2 {
@@ -105,6 +116,7 @@ impl Inst {
                 }
 
                 miku.stack.swap(miku.stack_top - 1, miku.stack_top - 2);
+                miku.ins_ptr += 1;
             }
             Self::Plus => {
                 if miku.stack_top < 2 {
@@ -115,6 +127,7 @@ impl Inst {
                 let b = miku.stack.pop().unwrap();
                 miku.stack.push(StackEntry::add(a, b));
                 miku.stack_top -= 1;
+                miku.ins_ptr += 1;
             }
             Self::Minus => {
                 if miku.stack_top < 2 {
@@ -125,6 +138,7 @@ impl Inst {
                 let b = miku.stack.pop().unwrap();
                 miku.stack.push(StackEntry::subtract(a, b));
                 miku.stack_top -= 1;
+                miku.ins_ptr += 1;
             }
             Self::Mult => {
                 if miku.stack_top < 2 {
@@ -135,6 +149,7 @@ impl Inst {
                 let b = miku.stack.pop().unwrap();
                 miku.stack.push(StackEntry::multiply(a, b));
                 miku.stack_top -= 1;
+                miku.ins_ptr += 1;
             }
             Self::Div => {
                 if miku.stack_top < 2 {
@@ -145,6 +160,7 @@ impl Inst {
                 let b = miku.stack.pop().unwrap();
                 miku.stack.push(StackEntry::divide(a, b));
                 miku.stack_top -= 1;
+                miku.ins_ptr += 1;
             }
             Self::Eq => {
                 if miku.stack_top < 2 {
@@ -161,6 +177,14 @@ impl Inst {
                 }
 
                 miku.stack_top -= 1;
+                miku.ins_ptr += 1;
+            }
+            Self::Jmp(operand) => {
+                if *operand >= miku.program.len() {
+                    panic!("JUMP OUT OF BOUNDS: {}", operand);
+                }
+
+                miku.ins_ptr = *operand;
             }
         }
     }

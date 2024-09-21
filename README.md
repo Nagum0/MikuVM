@@ -26,3 +26,4 @@
 | 6      | mult  | -     | -     | -    | -    | Pops the top 2 values off the stack, multiplies them together and pushes the result back on the stack                         |
 | 7      | div   | -     | -     | -    | -    | Pops the top 2 values off the stack, divides the first popped with the second and pushes the result back on the stack         |
 | 8      | eq    | -     | -     | -    | -    | Pops the top 2 values off the stack, checks whether they're equal, if they are it pushes U8(0) onto the stack else U8(1)      |
+| 9      | jmp   | value | -     | -    | -    | Jumps to the given address (label or hardcoded address)                                                                       |

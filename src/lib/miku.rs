@@ -3,6 +3,7 @@ use crate::stack::StackEntry;
 
 pub struct Miku {
     pub program: Vec<Inst>,
+    pub ins_ptr: usize,
 
     pub stack: Vec<StackEntry>,
     pub stack_base: usize,
@@ -13,6 +14,7 @@ impl Miku {
     pub fn new() -> Miku {
         Miku {
             program: Vec::new(),
+            ins_ptr: 0,
 
             stack: Vec::new(),
             stack_base: 0,
@@ -21,8 +23,8 @@ impl Miku {
     }
 
     pub fn run_program(&mut self) {
-        for i in 0..self.program.len() {
-            let inst = self.program[i];
+        while self.ins_ptr < self.program.len() {
+            let inst = self.program[self.ins_ptr];
             inst.execute(self);
             self.dump_stack();
         }
