@@ -16,6 +16,7 @@ pub enum Inst {
     Jmp(usize),
     JmpZ(usize),
     JmpNZ(usize),
+    Cfb(usize),
 }
 
 impl Inst {
@@ -52,6 +53,10 @@ impl Inst {
                 bytes.push(0x0B);
                 bytes.extend(operand.to_le_bytes());
             }
+            Self::Cfb(operand) => {
+                bytes.push(0x0C);
+                bytes.extend(operand.to_le_bytes());
+            }
         }
 
         bytes
@@ -74,13 +79,24 @@ impl Inst {
             0x07 => Inst::Div,
             0x08 => Inst::Eq,
             0x09 => Inst::Jmp(usize::from_le_bytes(
-                bytes[1..bytes.len()].try_into().unwrap(),
+                bytes[1..bytes.len()]
+                    .try_into()
+                    .expect("COULD NOT CONVERT OPERAND AT JMP"),
             )),
             0x0A => Inst::JmpZ(usize::from_le_bytes(
-                bytes[1..bytes.len()].try_into().unwrap(),
+                bytes[1..bytes.len()]
+                    .try_into()
+                    .expect("COULD NOT CONVERT OPERAND AT JMPZ"),
             )),
             0x0B => Inst::JmpNZ(usize::from_le_bytes(
-                bytes[1..bytes.len()].try_into().unwrap(),
+                bytes[1..bytes.len()]
+                    .try_into()
+                    .expect("COULD NOT CONVERT OPERAND AT JMPNZ"),
+            )),
+            0x0C => Inst::Cfb(usize::from_le_bytes(
+                bytes[1..bytes.len()]
+                    .try_into()
+                    .expect("COULD NOT CONVERT OPERAND AT CFB"),
             )),
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
@@ -112,7 +128,7 @@ impl Inst {
                 }
 
                 if *operand >= miku.stack_top {
-                    panic!("STACK OVERFLOW");
+                    panic!("DUP INDEX OUT OF BOUNDS");
                 }
 
                 let offset = miku.stack_top - 1 - *operand;
@@ -229,6 +245,26 @@ impl Inst {
                 } else {
                     miku.ins_ptr += 1;
                 }
+            }
+            Self::Cfb(operand) => {
+                if miku.stack_top == miku.stack_base {
+                    panic!("STACK UNDERFLOW");
+                }
+
+                let index = miku.stack_base + *operand;
+
+                if index >= miku.stack_top {
+                    panic!("CFB INDEX OUT OF BOUNDS");
+                }
+
+                if miku.stack.len() == miku.stack_top {
+                    miku.stack.push(miku.stack[index]);
+                } else {
+                    miku.stack[miku.stack_top] = miku.stack[index];
+                }
+
+                miku.stack_top += 1;
+                miku.ins_ptr += 1;
             }
         }
     }

@@ -32,8 +32,8 @@ impl Miku {
 
     fn dump_stack(&self) {
         println!("Stack ({}):", self.stack_top);
-        for entry in &self.stack {
-            println!("  {:?}", entry);
+        for i in 0..self.stack.len() {
+            println!("  [{:<3}]  {:?}", i, self.stack[i]);
         }
     }
 }

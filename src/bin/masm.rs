@@ -54,6 +54,9 @@ fn parse_file(path: &str) -> Vec<Inst> {
                         .parse()
                         .expect("EXPECTED A NUMBER AFTER JMPNZ"),
                 )),
+                "cfb" => acc.push(Inst::Cfb(
+                    split_line[1].parse().expect("EXPECTED A NUMBER AFTER CFB"),
+                )),
                 _ => panic!("UNKNOWN INSTRUCTION: {}", split_line[0]),
             }
 
