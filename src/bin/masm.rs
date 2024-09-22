@@ -49,6 +49,11 @@ fn parse_file(path: &str) -> Vec<Inst> {
                 "jmpz" => acc.push(Inst::JmpZ(
                     split_line[1].parse().expect("EXPECTED A NUMBER AFTER JMPZ"),
                 )),
+                "jmpnz" => acc.push(Inst::JmpNZ(
+                    split_line[1]
+                        .parse()
+                        .expect("EXPECTED A NUMBER AFTER JMPNZ"),
+                )),
                 _ => panic!("UNKNOWN INSTRUCTION: {}", split_line[0]),
             }
 
