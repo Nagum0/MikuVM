@@ -25,7 +25,7 @@ fn read_bytes(path: &str) -> Vec<u8> {
 fn split_bytes_by_size(bytes: &[u8]) -> Vec<&[u8]> {
     let mut result = Vec::new();
     let mut start: usize = 0;
-    let mut end: usize = bytes[start] as usize + 1;
+    let mut end: usize = 0;
 
     while start < bytes.len() && end < bytes.len() {
         end = start + bytes[start] as usize + 1;
