@@ -19,14 +19,7 @@ pub enum Inst {
     DupB(usize),
 
     // Functions
-
-    // Push next instruction pointer onto the stack;
-    // Push base pointer value onto the stack;
-    // Jump to the first instruction of the function;
     Call(usize),
-
-    // Reset base pointer to the old base pointer;
-    // Pop off the return position and jump to it;
     Ret,
 }
 
@@ -145,7 +138,7 @@ impl Inst {
                 miku.ins_ptr += 1;
             }
             Self::DupT(operand) => {
-                if miku.stack_top == miku.stack_base {
+                if miku.stack.is_empty() {
                     panic!("STACK UNDERFLOW");
                 }
 
@@ -269,7 +262,7 @@ impl Inst {
                 }
             }
             Self::DupB(operand) => {
-                if miku.stack_top == miku.stack_base {
+                if miku.stack.is_empty() {
                     panic!("STACK UNDERFLOW");
                 }
 
