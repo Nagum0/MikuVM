@@ -25,15 +25,21 @@ impl Miku {
     pub fn run_program(&mut self) {
         while self.ins_ptr < self.program.len() {
             let inst = self.program[self.ins_ptr];
+            println!("Executing {:?}:", inst);
             inst.execute(self);
-            self.dump_stack();
+
+            if self.stack_top != 0 {
+                self.dump_stack();
+            } else {
+                println!("  [Empty]")
+            }
         }
     }
 
     fn dump_stack(&self) {
-        println!("Stack ({}):", self.stack_top);
-        for i in 0..self.stack.len() {
-            println!("  [{:<3}]  {:?}", i, self.stack[i]);
+        println!("  Stack ({}) -> ({}):", self.stack_base, self.stack_top);
+        for i in 0..self.stack_top {
+            println!("    [{:<2}]  {:?}", i, self.stack[i]);
         }
     }
 }

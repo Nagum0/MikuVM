@@ -17,6 +17,17 @@ pub enum Inst {
     JmpZ(usize),
     JmpNZ(usize),
     DupB(usize),
+
+    // Functions
+
+    // Push next instruction pointer onto the stack;
+    // Push base pointer value onto the stack;
+    // Jump to the first instruction of the function;
+    Call(usize),
+
+    // Reset base pointer to the old base pointer;
+    // Pop off the return position and jump to it;
+    Ret,
 }
 
 impl Inst {
@@ -57,6 +68,11 @@ impl Inst {
                 bytes.push(0x0C);
                 bytes.extend(operand.to_le_bytes());
             }
+            Self::Call(operand) => {
+                bytes.push(0x0D);
+                bytes.extend(operand.to_le_bytes());
+            }
+            Self::Ret => bytes.push(0x0E),
         }
 
         bytes
@@ -96,8 +112,14 @@ impl Inst {
             0x0C => Inst::DupB(usize::from_le_bytes(
                 bytes[1..bytes.len()]
                     .try_into()
-                    .expect("COULD NOT CONVERT OPERAND AT DupB"),
+                    .expect("COULD NOT CONVERT OPERAND AT DUPB"),
             )),
+            0x0D => Inst::Call(usize::from_le_bytes(
+                bytes[1..bytes.len()]
+                    .try_into()
+                    .expect("COULD NOT CONVERT OPERAND AT CALL"),
+            )),
+            0x0E => Inst::Ret,
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
     }
@@ -254,7 +276,7 @@ impl Inst {
                 let index = miku.stack_base + *operand;
 
                 if index >= miku.stack_top {
-                    panic!("DupB INDEX OUT OF BOUNDS");
+                    panic!("DUPB INDEX OUT OF BOUNDS");
                 }
 
                 if miku.stack.len() == miku.stack_top {
@@ -265,6 +287,54 @@ impl Inst {
 
                 miku.stack_top += 1;
                 miku.ins_ptr += 1;
+            }
+            Self::Call(operand) => {
+                if *operand >= miku.program.len() {
+                    panic!("FUNCTION CALL OUT OF BOUNDS");
+                }
+
+                // Push the return address (ins_ptr + 1) onto the stack:
+                let return_address = StackEntry::U64((miku.ins_ptr + 1) as u64);
+
+                if miku.stack_top == miku.stack.len() {
+                    miku.stack.push(return_address);
+                } else {
+                    miku.stack[miku.stack_top] = return_address;
+                }
+
+                miku.stack_top += 1;
+
+                // Push current base ptr onto the stack:
+                let base_ptr = StackEntry::U64(miku.stack_base as u64);
+
+                if miku.stack_top == miku.stack.len() {
+                    miku.stack.push(base_ptr);
+                } else {
+                    miku.stack[miku.stack_top] = base_ptr;
+                }
+
+                miku.stack_top += 1;
+
+                // Changing the base to the current top:
+                miku.stack_base = miku.stack_top;
+
+                // Jumping to the first instruction of the function:
+                miku.ins_ptr = *operand;
+            }
+            Self::Ret => {
+                // Resetting the base pointer:
+                match miku.stack[miku.stack_top - 1] {
+                    StackEntry::U64(val) => miku.stack_base = val as usize,
+                    _ => panic!("EXPECTED U64 AS RETURN STACK BASE"),
+                }
+                miku.stack_top -= 1;
+
+                // Jumping back to return address:
+                match miku.stack[miku.stack_top - 1] {
+                    StackEntry::U64(addr) => miku.ins_ptr = addr as usize,
+                    _ => panic!("EXPECTED U64 AS RETURN ADDRESS"),
+                }
+                miku.stack_top -= 1;
             }
         }
     }
