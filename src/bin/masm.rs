@@ -34,8 +34,8 @@ fn parse_file(path: &str) -> Vec<Inst> {
                     &split_line[1..split_line.len()],
                 ))),
                 "pop" => acc.push(Inst::Pop),
-                "dup" => acc.push(Inst::Dup(
-                    split_line[1].parse().expect("EXPECTED A NUMBER AFTER DUP"),
+                "dupt" => acc.push(Inst::DupT(
+                    split_line[1].parse().expect("EXPECTED A NUMBER AFTER DUPT"),
                 )),
                 "swap" => acc.push(Inst::Swap),
                 "plus" => acc.push(Inst::Plus),
@@ -54,8 +54,8 @@ fn parse_file(path: &str) -> Vec<Inst> {
                         .parse()
                         .expect("EXPECTED A NUMBER AFTER JMPNZ"),
                 )),
-                "cfb" => acc.push(Inst::Cfb(
-                    split_line[1].parse().expect("EXPECTED A NUMBER AFTER CFB"),
+                "dupb" => acc.push(Inst::DupB(
+                    split_line[1].parse().expect("EXPECTED A NUMBER AFTER DUPB"),
                 )),
                 _ => panic!("UNKNOWN INSTRUCTION: {}", split_line[0]),
             }

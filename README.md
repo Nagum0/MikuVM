@@ -26,7 +26,7 @@ $ miku fib.mm
 | ------ | ----- | ----- | ----- | ---- | ---- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | 0      | push  | type  | value | -    | -    | Pushes a value onto the top of the stack with the given type                                                                          |
 | 1      | pop   | -     | -     | -    | -    | Pops the top value off the stack (That value is lost)                                                                                 |
-| 2      | dup   | value | -     | -    | -    | Duplicates the value at the given relative index and pushes it onto the top of the stack                                              |
+| 2      | dupt  | value | -     | -    | -    | Duplicates the value at the given relative index from the top and pushes it onto the top of the stack                                 |
 | 3      | swap  | -     | -     | -    | -    | Swaps the top 2 values on the stack                                                                                                   |
 | 4      | plus  | -     | -     | -    | -    | Pops the top 2 values off the stack, adds them together and pushes the result back on the stack                                       |
 | 5      | minus | -     | -     | -    | -    | Pops the top 2 values off the stack, subtracts the second popped value from the first and pushes the result back on the stack         |
@@ -36,6 +36,7 @@ $ miku fib.mm
 | 9      | jmp   | value | -     | -    | -    | Jumps to the given address (label or hardcoded address)                                                                               |
 | 10     | jmpz  | value | -     | -    | -    | Jumps to the given address (label or hardcoded address) if the top value on the stack is a 0 byte (U8). Pops the top of the stack     |
 | 11     | jmpnz | value | -     | -    | -    | Jumps to the given address (label or hardcoded address) if the top value on the stack is not a 0 byte (U8). Pops the top of the stack |
+| 12     | dupb  | value | -     | -    | -    | Duplicates the value at the given relative index from the base and pushes it onto the top of the stack                                |
 
 ### Examples
 

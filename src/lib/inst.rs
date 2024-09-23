@@ -6,7 +6,7 @@ pub enum Inst {
     // Stack operations
     Push(StackEntry),
     Pop,
-    Dup(usize),
+    DupT(usize),
     Swap,
     Plus,
     Minus,
@@ -16,7 +16,7 @@ pub enum Inst {
     Jmp(usize),
     JmpZ(usize),
     JmpNZ(usize),
-    Cfb(usize),
+    DupB(usize),
 }
 
 impl Inst {
@@ -31,7 +31,7 @@ impl Inst {
                 bytes.extend(operand.to_bytes());
             }
             Self::Pop => bytes.push(0x01),
-            Self::Dup(operand) => {
+            Self::DupT(operand) => {
                 bytes.push(0x02);
                 bytes.extend(operand.to_le_bytes());
             }
@@ -53,7 +53,7 @@ impl Inst {
                 bytes.push(0x0B);
                 bytes.extend(operand.to_le_bytes());
             }
-            Self::Cfb(operand) => {
+            Self::DupB(operand) => {
                 bytes.push(0x0C);
                 bytes.extend(operand.to_le_bytes());
             }
@@ -67,7 +67,7 @@ impl Inst {
         match bytes[0] {
             0x00 => Inst::Push(StackEntry::from_bytes(&bytes[1..bytes.len()])),
             0x01 => Inst::Pop,
-            0x02 => Inst::Dup(usize::from_le_bytes(
+            0x02 => Inst::DupT(usize::from_le_bytes(
                 bytes[1..bytes.len()]
                     .try_into()
                     .expect("COULD NOT CONVERT OPERAND AT DUP"),
@@ -93,10 +93,10 @@ impl Inst {
                     .try_into()
                     .expect("COULD NOT CONVERT OPERAND AT JMPNZ"),
             )),
-            0x0C => Inst::Cfb(usize::from_le_bytes(
+            0x0C => Inst::DupB(usize::from_le_bytes(
                 bytes[1..bytes.len()]
                     .try_into()
-                    .expect("COULD NOT CONVERT OPERAND AT CFB"),
+                    .expect("COULD NOT CONVERT OPERAND AT DupB"),
             )),
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
@@ -122,7 +122,7 @@ impl Inst {
                 miku.stack_top -= 1;
                 miku.ins_ptr += 1;
             }
-            Self::Dup(operand) => {
+            Self::DupT(operand) => {
                 if miku.stack_top == miku.stack_base {
                     panic!("STACK UNDERFLOW");
                 }
@@ -246,7 +246,7 @@ impl Inst {
                     miku.ins_ptr += 1;
                 }
             }
-            Self::Cfb(operand) => {
+            Self::DupB(operand) => {
                 if miku.stack_top == miku.stack_base {
                     panic!("STACK UNDERFLOW");
                 }
@@ -254,7 +254,7 @@ impl Inst {
                 let index = miku.stack_base + *operand;
 
                 if index >= miku.stack_top {
-                    panic!("CFB INDEX OUT OF BOUNDS");
+                    panic!("DupB INDEX OUT OF BOUNDS");
                 }
 
                 if miku.stack.len() == miku.stack_top {
