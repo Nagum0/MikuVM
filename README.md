@@ -22,23 +22,24 @@ $ miku fib.mm
 
 ### Instrucions
 
-| number | name  | arg1  | arg2  | arg3 | arg4 | description                                                                                                                           |
-| ------ | ----- | ----- | ----- | ---- | ---- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 0      | push  | type  | value | -    | -    | Pushes a value onto the top of the stack with the given type                                                                          |
-| 1      | pop   | -     | -     | -    | -    | Pops the top value off the stack (That value is lost)                                                                                 |
-| 2      | dupt  | value | -     | -    | -    | Duplicates the value at the given relative index from the top and pushes it onto the top of the stack                                 |
-| 3      | swap  | -     | -     | -    | -    | Swaps the top 2 values on the stack                                                                                                   |
-| 4      | plus  | -     | -     | -    | -    | Pops the top 2 values off the stack, adds them together and pushes the result back on the stack                                       |
-| 5      | minus | -     | -     | -    | -    | Pops the top 2 values off the stack, subtracts the second popped value from the first and pushes the result back on the stack         |
-| 6      | mult  | -     | -     | -    | -    | Pops the top 2 values off the stack, multiplies them together and pushes the result back on the stack                                 |
-| 7      | div   | -     | -     | -    | -    | Pops the top 2 values off the stack, divides the first popped with the second and pushes the result back on the stack                 |
-| 8      | eq    | -     | -     | -    | -    | Pops the top 2 values off the stack, checks whether they're equal, if they are it pushes U8(0) onto the stack else U8(1)              |
-| 9      | jmp   | value | -     | -    | -    | Jumps to the given address (label or hardcoded address)                                                                               |
-| 10     | jmpz  | value | -     | -    | -    | Jumps to the given address (label or hardcoded address) if the top value on the stack is a 0 byte (U8). Pops the top of the stack     |
-| 11     | jmpnz | value | -     | -    | -    | Jumps to the given address (label or hardcoded address) if the top value on the stack is not a 0 byte (U8). Pops the top of the stack |
-| 12     | dupb  | value | -     | -    | -    | Duplicates the value at the given relative index from the base and pushes it onto the top of the stack                                |
-| 13     | call  | value | -     | -    | -    | Pushes the next instuctions address and the old stack base pointers value onto the stack and jumps to the specified functions address |
-| 14     | ret   | -     | -     | -    | -    | Resets the old stack base pointer and jumps back to the return address                                                                |
+| number | name  | arg1  | arg2  | arg3 | arg4 | description                                                                                                                                           |
+| ------ | ----- | ----- | ----- | ---- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0      | push  | type  | value | -    | -    | Pushes a value onto the top of the stack with the given type                                                                                          |
+| 1      | pop   | -     | -     | -    | -    | Pops the top value off the stack (That value is lost)                                                                                                 |
+| 2      | dupt  | value | -     | -    | -    | Duplicates the value at the given relative index from the top and pushes it onto the top of the stack                                                 |
+| 3      | swap  | -     | -     | -    | -    | Swaps the top 2 values on the stack                                                                                                                   |
+| 4      | plus  | -     | -     | -    | -    | Pops the top 2 values off the stack, adds them together and pushes the result back on the stack                                                       |
+| 5      | minus | -     | -     | -    | -    | Pops the top 2 values off the stack, subtracts the second popped value from the first and pushes the result back on the stack                         |
+| 6      | mult  | -     | -     | -    | -    | Pops the top 2 values off the stack, multiplies them together and pushes the result back on the stack                                                 |
+| 7      | div   | -     | -     | -    | -    | Pops the top 2 values off the stack, divides the first popped with the second and pushes the result back on the stack                                 |
+| 8      | eq    | -     | -     | -    | -    | Pops the top 2 values off the stack, checks whether they're equal, if they are it pushes U8(0) onto the stack else U8(1)                              |
+| 9      | jmp   | value | -     | -    | -    | Jumps to the given address (label or hardcoded address)                                                                                               |
+| 10     | jmpz  | value | -     | -    | -    | Jumps to the given address (label or hardcoded address) if the top value on the stack is a 0 byte (U8). Pops the top of the stack                     |
+| 11     | jmpnz | value | -     | -    | -    | Jumps to the given address (label or hardcoded address) if the top value on the stack is not a 0 byte (U8). Pops the top of the stack                 |
+| 12     | dupb  | value | -     | -    | -    | Duplicates the value at the given relative index from the base and pushes it onto the top of the stack                                                |
+| 13     | call  | value | -     | -    | -    | Pushes the next instuctions address and the old stack base pointers value onto the stack and jumps to the specified functions address                 |
+| 14     | ret   | -     | -     | -    | -    | Resets the old stack base pointer and jumps back to the return address                                                                                |
+| 15     | retv  | -     | -     | -    | -    | Save the top of the stack (return value) return normally (check the ret instruction for details) after returning push the return value onto the stack |
 
 ### Examples
 
