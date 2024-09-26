@@ -79,3 +79,9 @@ dup 2
 jmp 3
 dup 1
 ```
+
+### TODOs
+
+- [ ] Registers
+- [ ] Tidying up the code
+- [ ] Error handling
