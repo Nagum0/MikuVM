@@ -21,7 +21,6 @@ pub enum Inst {
     // Functions
     Call(usize),
     Ret,
-    RetV,
 }
 
 impl Inst {
@@ -67,7 +66,6 @@ impl Inst {
                 bytes.extend(operand.to_le_bytes());
             }
             Self::Ret => bytes.push(0x0E),
-            Self::RetV => bytes.push(0x0F),
         }
 
         bytes
@@ -115,7 +113,6 @@ impl Inst {
                     .expect("COULD NOT CONVERT OPERAND AT CALL"),
             )),
             0x0E => Inst::Ret,
-            0x0F => Inst::RetV,
             _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
         }
     }
@@ -331,33 +328,6 @@ impl Inst {
                     _ => panic!("EXPECTED U64 AS RETURN ADDRESS"),
                 }
                 miku.stack_top -= 1;
-            }
-            Self::RetV => {
-                // Saving the return value:
-                let return_value = miku.stack[miku.stack_top - 1];
-                miku.stack_top -= 1;
-
-                // Resetting the base pointer:
-                match miku.stack[miku.stack_top - 1] {
-                    StackEntry::U64(val) => miku.stack_base = val as usize,
-                    _ => panic!("EXPECTED U64 AS RETURN STACK BASE"),
-                }
-                miku.stack_top -= 1;
-
-                // Jumping back to return address:
-                match miku.stack[miku.stack_top - 1] {
-                    StackEntry::U64(addr) => miku.ins_ptr = addr as usize,
-                    _ => panic!("EXPECTED U64 AS RETURN ADDRESS"),
-                }
-                miku.stack_top -= 1;
-
-                // Push the saved return value onto the stack:
-                if miku.stack_top == miku.stack.len() {
-                    miku.stack.push(return_value);
-                } else {
-                    miku.stack[miku.stack_top] = return_value;
-                }
-                miku.stack_top += 1;
             }
         }
     }
