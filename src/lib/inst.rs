@@ -1,5 +1,6 @@
 use crate::miku::Miku;
-use crate::stack::MikuType;
+use crate::types::MikuType;
+use crate::traits::AsBytes;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Inst {

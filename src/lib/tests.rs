@@ -1,4 +1,4 @@
-use crate::stack::MikuType;
+use crate::types::MikuType;
 use crate::miku::Miku;
 use crate::inst::Inst;
 

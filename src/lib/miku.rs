@@ -1,5 +1,5 @@
 use crate::inst::Inst;
-use crate::stack::MikuType;
+use crate::types::MikuType;
 
 pub struct Miku {
     pub program: Vec<Inst>,
