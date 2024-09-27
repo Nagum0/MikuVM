@@ -1,7 +1,4 @@
-use crate::{
-    error::MikuError,
-    types::MikuType,
-};
+use crate::error::MikuError;
 
 /// Convert a T value to U if possible. If not return MikuError.
 /// Currently only used for converting byte slices into byte arrays conveniently.
