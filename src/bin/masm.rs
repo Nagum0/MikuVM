@@ -4,7 +4,7 @@ use std::io::Write;
 use std::process::exit;
 
 use vm::inst::Inst;
-use vm::stack::StackEntry;
+use vm::stack::MikuType;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -30,7 +30,7 @@ fn parse_file(path: &str) -> Vec<Inst> {
             let split_line = line.split(' ').collect::<Vec<&str>>();
 
             match split_line[0] {
-                "push" => acc.push(Inst::Push(StackEntry::from_strs(
+                "push" => acc.push(Inst::Push(MikuType::from_strs(
                     &split_line[1..split_line.len()],
                 ))),
                 "pop" => acc.push(Inst::Pop),

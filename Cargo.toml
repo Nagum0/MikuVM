@@ -16,3 +16,4 @@ name = "masm"
 path = "./src/bin/masm.rs"
 
 [dependencies]
+thiserror = "1.0.64"

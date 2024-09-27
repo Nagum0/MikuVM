@@ -1,10 +1,10 @@
 use crate::miku::Miku;
-use crate::stack::StackEntry;
+use crate::stack::MikuType;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Inst {
     // Stack operations
-    Push(StackEntry),
+    Push(MikuType),
     Pop,
     DupT(usize),
     Swap,
@@ -76,7 +76,7 @@ impl Inst {
     /// Takes a slice of bytes and turns them into an Inst.
     pub fn from_bytes(bytes: &[u8]) -> Inst {
         match bytes[0] {
-            0x00 => Inst::Push(StackEntry::from_bytes(&bytes[1..bytes.len()])),
+            0x00 => Inst::Push(MikuType::from_bytes(&bytes[1..bytes.len()])),
             0x01 => Inst::Pop,
             0x02 => Inst::DupT(usize::from_le_bytes(
                 bytes[1..bytes.len()]
@@ -175,7 +175,7 @@ impl Inst {
 
                 let a = miku.stack.pop().unwrap();
                 let b = miku.stack.pop().unwrap();
-                miku.stack.push(StackEntry::add(a, b));
+                miku.stack.push(MikuType::add(a, b));
                 miku.stack_top -= 1;
                 miku.ins_ptr += 1;
             }
@@ -186,7 +186,7 @@ impl Inst {
 
                 let a = miku.stack.pop().unwrap();
                 let b = miku.stack.pop().unwrap();
-                miku.stack.push(StackEntry::subtract(a, b));
+                miku.stack.push(MikuType::subtract(a, b));
                 miku.stack_top -= 1;
                 miku.ins_ptr += 1;
             }
@@ -197,7 +197,7 @@ impl Inst {
 
                 let a = miku.stack.pop().unwrap();
                 let b = miku.stack.pop().unwrap();
-                miku.stack.push(StackEntry::multiply(a, b));
+                miku.stack.push(MikuType::multiply(a, b));
                 miku.stack_top -= 1;
                 miku.ins_ptr += 1;
             }
@@ -208,7 +208,7 @@ impl Inst {
 
                 let a = miku.stack.pop().unwrap();
                 let b = miku.stack.pop().unwrap();
-                miku.stack.push(StackEntry::divide(a, b));
+                miku.stack.push(MikuType::divide(a, b));
                 miku.stack_top -= 1;
                 miku.ins_ptr += 1;
             }
@@ -220,10 +220,10 @@ impl Inst {
                 let a = miku.stack.pop().unwrap();
                 let b = miku.stack.pop().unwrap();
 
-                if StackEntry::eq(a, b) {
-                    miku.stack.push(StackEntry::U8(0));
+                if MikuType::eq(a, b) {
+                    miku.stack.push(MikuType::U8(0));
                 } else {
-                    miku.stack.push(StackEntry::U8(1));
+                    miku.stack.push(MikuType::U8(1));
                 }
 
                 miku.stack_top -= 1;
@@ -244,7 +244,7 @@ impl Inst {
                 let top = miku.stack.pop().unwrap();
                 miku.stack_top -= 1;
 
-                if StackEntry::eq(top, StackEntry::U8(0)) {
+                if MikuType::eq(top, MikuType::U8(0)) {
                     miku.ins_ptr = *operand;
                 } else {
                     miku.ins_ptr += 1;
@@ -258,7 +258,7 @@ impl Inst {
                 let top = miku.stack.pop().unwrap();
                 miku.stack_top -= 1;
 
-                if !StackEntry::eq(top, StackEntry::U8(0)) {
+                if !MikuType::eq(top, MikuType::U8(0)) {
                     miku.ins_ptr = *operand;
                 } else {
                     miku.ins_ptr += 1;
@@ -290,7 +290,7 @@ impl Inst {
                 }
 
                 // Push the return address (ins_ptr + 1) onto the stack:
-                let return_address = StackEntry::U64((miku.ins_ptr + 1) as u64);
+                let return_address = MikuType::U64((miku.ins_ptr + 1) as u64);
 
                 if miku.stack_top == miku.stack.len() {
                     miku.stack.push(return_address);
@@ -301,7 +301,7 @@ impl Inst {
                 miku.stack_top += 1;
 
                 // Push current base ptr onto the stack:
-                let base_ptr = StackEntry::U64(miku.stack_base as u64);
+                let base_ptr = MikuType::U64(miku.stack_base as u64);
 
                 if miku.stack_top == miku.stack.len() {
                     miku.stack.push(base_ptr);
@@ -320,14 +320,14 @@ impl Inst {
             Self::Ret => {
                 // Resetting the base pointer:
                 match miku.stack[miku.stack_top - 1] {
-                    StackEntry::U64(val) => miku.stack_base = val as usize,
+                    MikuType::U64(val) => miku.stack_base = val as usize,
                     _ => panic!("EXPECTED U64 AS RETURN STACK BASE"),
                 }
                 miku.stack_top -= 1;
 
                 // Jumping back to return address:
                 match miku.stack[miku.stack_top - 1] {
-                    StackEntry::U64(addr) => miku.ins_ptr = addr as usize,
+                    MikuType::U64(addr) => miku.ins_ptr = addr as usize,
                     _ => panic!("EXPECTED U64 AS RETURN ADDRESS"),
                 }
                 miku.stack_top -= 1;
@@ -346,14 +346,14 @@ impl Inst {
 
                 // Resetting the base pointer:
                 match miku.stack[miku.stack_top - 1] {
-                    StackEntry::U64(val) => miku.stack_base = val as usize,
+                    MikuType::U64(val) => miku.stack_base = val as usize,
                     _ => panic!("EXPECTED U64 AS RETURN STACK BASE"),
                 }
                 miku.stack_top -= 1;
 
                 // Jumping back to return address:
                 match miku.stack[miku.stack_top - 1] {
-                    StackEntry::U64(addr) => miku.ins_ptr = addr as usize,
+                    MikuType::U64(addr) => miku.ins_ptr = addr as usize,
                     _ => panic!("EXPECTED U64 AS RETURN ADDRESS"),
                 }
                 miku.stack_top -= 1;

@@ -1,14 +1,14 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum StackEntry {
+pub enum MikuType {
     U8(u8),
     U16(u16),
     U32(u32),
     U64(u64),
 }
 
-impl StackEntry {
+impl MikuType {
     /// Adds 2 stack entry values together and returns the result.
-    pub fn add(a: StackEntry, b: StackEntry) -> StackEntry {
+    pub fn add(a: MikuType, b: MikuType) -> MikuType {
         match (a, b) {
             (Self::U8(a), Self::U8(b)) => Self::U8(a + b),
             (Self::U16(a), Self::U16(b)) => Self::U16(a + b),
@@ -19,7 +19,7 @@ impl StackEntry {
     }
 
     /// Subtracts 2 stack entry values and returns the result.
-    pub fn subtract(a: StackEntry, b: StackEntry) -> StackEntry {
+    pub fn subtract(a: MikuType, b: MikuType) -> MikuType {
         match (a, b) {
             (Self::U8(a), Self::U8(b)) => Self::U8(a - b),
             (Self::U16(a), Self::U16(b)) => Self::U16(a - b),
@@ -30,7 +30,7 @@ impl StackEntry {
     }
 
     /// Multiplies 2 stack entries and returns the result.
-    pub fn multiply(a: StackEntry, b: StackEntry) -> StackEntry {
+    pub fn multiply(a: MikuType, b: MikuType) -> MikuType {
         match (a, b) {
             (Self::U8(a), Self::U8(b)) => Self::U8(a * b),
             (Self::U16(a), Self::U16(b)) => Self::U16(a * b),
@@ -41,7 +41,7 @@ impl StackEntry {
     }
 
     /// Divides 2 stack entries and returns the result. Panics if b is 0.
-    pub fn divide(a: StackEntry, b: StackEntry) -> StackEntry {
+    pub fn divide(a: MikuType, b: MikuType) -> MikuType {
         match (a, b) {
             (Self::U8(a), Self::U8(b)) => {
                 if b == 0 {
@@ -71,7 +71,7 @@ impl StackEntry {
         }
     }
 
-    pub fn eq(a: StackEntry, b: StackEntry) -> bool {
+    pub fn eq(a: MikuType, b: MikuType) -> bool {
         match (a, b) {
             (Self::U8(a), Self::U8(b)) => a == b,
             (Self::U16(a), Self::U16(b)) => a == b,
@@ -84,7 +84,7 @@ impl StackEntry {
         }
     }
 
-    /// Takes a StackEntry and turns it into a vector of bytes.
+    /// Takes a MikuType and turns it into a vector of bytes.
     /// * First byte is the type and the rest are the value.
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
@@ -111,8 +111,8 @@ impl StackEntry {
         bytes
     }
 
-    /// Takes a slice of bytes and turns them into a StackEntry.
-    pub fn from_bytes(bytes: &[u8]) -> StackEntry {
+    /// Takes a slice of bytes and turns them into a MikuType.
+    pub fn from_bytes(bytes: &[u8]) -> MikuType {
         match bytes[0] {
             0x00 => Self::U8(u8::from_le_bytes(bytes[1..bytes.len()].try_into().unwrap())),
             0x01 => Self::U16(u16::from_le_bytes(
@@ -128,17 +128,17 @@ impl StackEntry {
         }
     }
 
-    /// Takes a slice of string slices and turns them into a StackEntry.
-    pub fn from_strs(strs: &[&str]) -> StackEntry {
+    /// Takes a slice of string slices and turns them into a MikuType.
+    pub fn from_strs(strs: &[&str]) -> MikuType {
         if strs.len() != 2 {
             panic!("EXPECTED: <type> <value>\nRECEIVED: {:?}", strs);
         }
 
         match strs[0] {
-            "u8" => StackEntry::U8(strs[1].parse().expect("EXPECTED A NUMBER")),
-            "u16" => StackEntry::U16(strs[1].parse().expect("EXPECTED A NUMBER")),
-            "u32" => StackEntry::U32(strs[1].parse().expect("EXPECTED A NUMBER")),
-            "u64" => StackEntry::U64(strs[1].parse().expect("EXPECTED A NUMBER")),
+            "u8" => MikuType::U8(strs[1].parse().expect("EXPECTED A NUMBER")),
+            "u16" => MikuType::U16(strs[1].parse().expect("EXPECTED A NUMBER")),
+            "u32" => MikuType::U32(strs[1].parse().expect("EXPECTED A NUMBER")),
+            "u64" => MikuType::U64(strs[1].parse().expect("EXPECTED A NUMBER")),
             _ => panic!("UNKNOWN TYPE: {}", strs[0]),
         }
     }

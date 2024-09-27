@@ -1,11 +1,11 @@
 use crate::inst::Inst;
-use crate::stack::StackEntry;
+use crate::stack::MikuType;
 
 pub struct Miku {
     pub program: Vec<Inst>,
     pub ins_ptr: usize,
 
-    pub stack: Vec<StackEntry>,
+    pub stack: Vec<MikuType>,
     pub stack_base: usize,
     pub stack_top: usize,
 }
