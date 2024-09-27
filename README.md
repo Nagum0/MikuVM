@@ -39,7 +39,7 @@ $ miku fib.mm
 | 12     | dupb  | value | -     | -    | -    | Duplicates the value at the given relative index from the base and pushes it onto the top of the stack                                                |
 | 13     | call  | value | -     | -    | -    | Pushes the next instuctions address and the old stack base pointers value onto the stack and jumps to the specified functions address                 |
 | 14     | ret   | -     | -     | -    | -    | Resets the old stack base pointer and jumps back to the return address                                                                                |
-| 15     | retv  | -     | -     | -    | -    | Save the top of the stack (return value) return normally (check the ret instruction for details) after returning push the return value onto the stack |
+| 15     | retv  | -     | -     | -    | -    | Save the top of the stack as the return value. Clear the stack frame (top -= top - base). Return as before and push saved return value onto the stack |
 
 ### Examples
 
@@ -82,6 +82,5 @@ dup 1
 
 ### TODOs
 
-- [ ] Registers
 - [ ] Tidying up the code
 - [ ] Error handling
