@@ -1,4 +1,4 @@
-use std::{env, fs, process::exit};
+/* use std::{env, fs, process::exit};
 
 use vm::inst::Inst;
 use vm::miku::Miku;
@@ -41,4 +41,9 @@ fn create_program(split_bytes: Vec<&[u8]>) -> Vec<Inst> {
         acc.push(Inst::from_bytes(&bytes));
         acc
     })
+}
+ */
+
+fn main() {
+    
 }

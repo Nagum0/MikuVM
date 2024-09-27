@@ -1,4 +1,4 @@
-use std::env;
+/* use std::env;
 use std::fs::{self, File};
 use std::io::Write;
 use std::process::exit;
@@ -77,4 +77,9 @@ fn write_bytes(path: &str, program: &[Inst]) {
         inst_bytes.insert(0, inst_bytes.len() as u8);
         file.write(&inst_bytes).unwrap();
     }
+}
+ */
+
+fn main() {
+    
 }
