@@ -1,4 +1,4 @@
-/* use crate::inst::Inst;
+use crate::inst::Inst;
 use crate::types::MikuType;
 
 pub struct Miku {
@@ -43,4 +43,3 @@ impl Miku {
         }
     }
 }
- */
