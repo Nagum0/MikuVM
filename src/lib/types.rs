@@ -115,6 +115,7 @@ impl MikuType {
 
     /// Takes a slice of string slices and turns them into a MikuType.
     /// ! Temporary
+    /// ### Panics
     pub fn from_strs(strs: &[&str]) -> MikuType {
         if strs.len() != 2 {
             panic!("EXPECTED: <type> <value>\nRECEIVED: {:?}", strs);
