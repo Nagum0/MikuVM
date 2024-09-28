@@ -54,7 +54,28 @@ impl AsBytes for MikuType {
     }
 }
 
+/// -- FIX THE REPETITIVE CODE:
 impl MikuType {
+    fn to_u64(&self) -> u64 {
+        todo!()
+    }
+
+    fn from_u64(value: u64) -> MikuType {
+        todo!()
+    }
+
+    fn operation<F, U>(a: MikuType, b: MikuType, op: F) -> MikuType 
+    where 
+        F: Fn(u64, u64) -> u64
+    {
+        if std::mem::discriminant(&a) != std::mem::discriminant(&b) {
+            panic!("TYPES DO NOT MATCH");
+        }
+
+        let result = op(a.to_u64(), b.to_u64());
+        MikuType::from_u64(result)
+    }
+
     /// Adds 2 stack entry values together and returns the result.
     pub fn add(a: MikuType, b: MikuType) -> Result<MikuType, MikuError> {
         match (a, b) {
