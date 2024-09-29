@@ -12,48 +12,64 @@ pub enum MikuType {
     I64(i64),
 }
 
+macro_rules! implement_operation {
+    ($method_name: ident, $op: tt) => {
+        pub fn $method_name(a: MikuType, b: MikuType) -> Result<MikuType, MikuError> {
+            match (stringify!($op), &b) {
+                ("/", MikuType::U8(0) | MikuType::U16(0) | MikuType::U32(0) | MikuType::U64(0) |
+                      MikuType::I8(0) | MikuType::I16(0) | MikuType::I32(0) | MikuType::I64(0)) => {
+                        return Err(MikuError::DivisionByZeroError);
+                }
+                _ => {},
+            }
+
+            match (a, b) {
+                (Self::U8(a), Self::U8(b))   => Ok(Self::U8(a $op b)),
+                (Self::U16(a), Self::U16(b)) => Ok(Self::U16(a $op b)),
+                (Self::U32(a), Self::U32(b)) => Ok(Self::U32(a $op b)),
+                (Self::U64(a), Self::U64(b)) => Ok(Self::U64(a $op b)),
+                (Self::I8(a), Self::I8(b))   => Ok(Self::I8(a $op b)),
+                (Self::I16(a), Self::I16(b)) => Ok(Self::I16(a $op b)),
+                (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a $op b)),
+                (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a $op b)),
+                _ => Err(MikuError::UndefinedOperationBetweenTypesError(format!("{:?} {} {:?}", a, stringify!($op), b))),
+            }
+        }
+    };
+}
+
+macro_rules! match_to_bytes {
+    ($self: expr, { $ ( $variant: ident => $tag: expr), * }) => {{
+        let mut bytes = Vec::new();
+        
+        match $self {
+            $(
+                Self::$variant(value) => {
+                    bytes.push($tag);
+                    bytes.extend(value.to_le_bytes());
+                }
+            )*
+        }
+        
+        bytes
+    }};
+}
+
 impl AsBytes for MikuType {
     /// Takes a MikuType and turns it into a vector of bytes.
     /// * First byte is the type and the rest are the value.
     fn to_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::new();
-
-        match self {
-            Self::U8(value) => {
-                bytes.push(0x00);
-                bytes.extend(value.to_le_bytes());
-            }
-            Self::U16(value) => {
-                bytes.push(0x01);
-                bytes.extend(value.to_le_bytes());
-            }
-            Self::U32(value) => {
-                bytes.push(0x02);
-                bytes.extend(value.to_le_bytes());
-            }
-            Self::U64(value) => {
-                bytes.push(0x03);
-                bytes.extend(value.to_le_bytes());
-            }
-            Self::I8(value) => {
-                bytes.push(0x04);
-                bytes.extend(value.to_le_bytes());
-            }
-            Self::I16(value) => {
-                bytes.push(0x05);
-                bytes.extend(value.to_le_bytes());
-            }
-            Self::I32(value) => {
-                bytes.push(0x06);
-                bytes.extend(value.to_le_bytes());
-            }
-            Self::I64(value) => {
-                bytes.push(0x07);
-                bytes.extend(value.to_le_bytes());
-            }
-        }
-
-        bytes
+        match_to_bytes!(
+            self, {
+            U8 => 0x00,
+            U16 => 0x01,
+            U32 => 0x02,
+            U64 => 0x03,
+            I8  => 0x04,
+            I16 => 0x05,
+            I32 => 0x06,
+            I64 => 0x07
+        })
     }
 
     /// Takes a slice of bytes and turns them into a MikuType.
@@ -79,69 +95,10 @@ impl AsBytes for MikuType {
 }
 
 impl MikuType {
-    /// Adds 2 stack entry values together and returns the result.
-    pub fn add(a: MikuType, b: MikuType) -> Result<MikuType, MikuError> {
-        match (a, b) {
-            (Self::U8(a), Self::U8(b))     => Ok(Self::U8(a + b)),
-            (Self::U16(a), Self::U16(b)) => Ok(Self::U16(a + b)),
-            (Self::U32(a), Self::U32(b)) => Ok(Self::U32(a + b)),
-            (Self::U64(a), Self::U64(b)) => Ok(Self::U64(a + b)),
-            (Self::I8(a), Self::I8(b))     => Ok(Self::I8(a + b)),
-            (Self::I16(a), Self::I16(b)) => Ok(Self::I16(a + b)),
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a + b)),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a + b)),
-            _ => Err(MikuError::UndefinedOperationBetweenTypesError(format!("Cannot add {:?} to {:?}", a, b))),
-        }
-    }
-
-    /// Subtracts 2 stack entry values and returns the result.
-    pub fn subtract(a: MikuType, b: MikuType) -> Result<MikuType, MikuError> {
-        match (a, b) {
-            (Self::U8(a), Self::U8(b))     => Ok(Self::U8(a - b)),
-            (Self::U16(a), Self::U16(b)) => Ok(Self::U16(a - b)),
-            (Self::U32(a), Self::U32(b)) => Ok(Self::U32(a - b)),
-            (Self::U64(a), Self::U64(b)) => Ok(Self::U64(a - b)),
-            (Self::I8(a), Self::I8(b))     => Ok(Self::I8(a - b)),
-            (Self::I16(a), Self::I16(b)) => Ok(Self::I16(a - b)),
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a - b)),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a - b)),
-            _ => Err(MikuError::UndefinedOperationBetweenTypesError(format!("Cannot subtract {:?} from {:?}", a, b))),
-        }
-    }
-
-    /// Multiplies 2 stack entries and returns the result.
-    pub fn multiply(a: MikuType, b: MikuType) -> Result<MikuType, MikuError> {
-        match (a, b) {
-            (Self::U8(a), Self::U8(b))     => Ok(Self::U8(a * b)),
-            (Self::U16(a), Self::U16(b)) => Ok(Self::U16(a * b)),
-            (Self::U32(a), Self::U32(b)) => Ok(Self::U32(a * b)),
-            (Self::U64(a), Self::U64(b)) => Ok(Self::U64(a * b)),
-            (Self::I8(a), Self::I8(b))     => Ok(Self::I8(a * b)),
-            (Self::I16(a), Self::I16(b)) => Ok(Self::I16(a * b)),
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a * b)),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a * b)),
-            _ => Err(MikuError::UndefinedOperationBetweenTypesError(format!("Cannot multiply {:?} with {:?}", a, b))),
-        }
-    }
-
-    /// Divides 2 stack entries and returns the result. Panics if b is 0.
-    pub fn divide(a: MikuType, b: MikuType) -> Result<MikuType, MikuError> {
-        if Self::is_zero(b) {
-            return Err(MikuError::DivisionByZeroError);
-        }
-        
-        match (a, b) {
-            (Self::U8(a), Self::U8(b))     => Ok(Self::U8(a / b)),
-            (Self::U16(a), Self::U16(b)) => Ok(Self::U16(a / b)),
-            (Self::U32(a), Self::U32(b)) => Ok(Self::U32(a / b)),
-            (Self::U64(a), Self::U64(b)) => Ok(Self::U64(a / b)),
-            (Self::I8(a), Self::I8(b))     => Ok(Self::I8(a / b)),
-            (Self::I16(a), Self::I16(b)) => Ok(Self::I16(a / b)),
-            (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a / b)),
-            (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a / b)),
-            _ => Err(MikuError::UndefinedOperationBetweenTypesError(format!("Cannot divide {:?} by {:?}", a, b))),
-        }
-    }
+    implement_operation!(add, +);
+    implement_operation!(subtract, -);
+    implement_operation!(multiply, *);
+    implement_operation!(divide, /);
 
     pub fn eq(a: MikuType, b: MikuType) -> Result<bool, MikuError> {
         match (a, b) {
@@ -175,20 +132,6 @@ impl MikuType {
             "i32" => MikuType::I32(strs[1].parse().expect("EXPECTED A NUMBER")),
             "i64" => MikuType::I64(strs[1].parse().expect("EXPECTED A NUMBER")),
             _ => panic!("UNKNOWN TYPE: {}", strs[0]),
-        }
-    }
-
-    /// Checks whether a is 0.
-    fn is_zero(a: MikuType) -> bool {
-        match a {
-            MikuType::U8(a)   => a == 0,
-            MikuType::U16(a) => a == 0,
-            MikuType::U32(a) => a == 0,
-            MikuType::U64(a) => a == 0,
-            MikuType::I8(a)   => a == 0,
-            MikuType::I16(a) => a == 0,
-            MikuType::I32(a) => a == 0,
-            MikuType::I64(a) => a == 0,
         }
     }
 }
