@@ -12,6 +12,7 @@ pub enum MikuType {
     I64(i64),
 }
 
+/// Macro for implementing operations for MikuType.
 macro_rules! implement_operation {
     ($method_name: ident, $op: tt) => {
         pub fn $method_name(a: MikuType, b: MikuType) -> Result<MikuType, MikuError> {
@@ -38,6 +39,7 @@ macro_rules! implement_operation {
     };
 }
 
+/// Macro for implementing to_bytes for MikuType.
 macro_rules! match_to_bytes {
     ($self: expr, { $ ( $variant: ident => $tag: expr), * }) => {{
         let mut bytes = Vec::new();
@@ -55,6 +57,7 @@ macro_rules! match_to_bytes {
     }};
 }
 
+/// Macro for implementing from_bytes for MikuType.
 macro_rules! match_from_bytes {
     ($type_identifier_byte: expr, $le_bytes: expr, { $ ($tag: expr => $variant: ident | $type: ident), * }) => {
         match $type_identifier_byte {
