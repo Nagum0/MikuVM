@@ -55,42 +55,40 @@ macro_rules! match_to_bytes {
     }};
 }
 
+macro_rules! match_from_bytes {
+    ($type_identifier_byte: expr, $le_bytes: expr, { $ ($tag: expr => $variant: ident | $type: ident), * }) => {
+        match $type_identifier_byte {
+            $(
+                $tag => Ok(Self::$variant($type::from_le_bytes(tools::convert_bytes($le_bytes)?))),
+            )*
+            _ => Err(MikuError::UnknownTypeError($type_identifier_byte)),
+        }
+    };
+}
+
 impl AsBytes for MikuType {
     /// Takes a MikuType and turns it into a vector of bytes.
     /// * First byte is the type and the rest are the value.
     fn to_bytes(&self) -> Vec<u8> {
         match_to_bytes!(
-            self, {
-            U8 => 0x00,
-            U16 => 0x01,
-            U32 => 0x02,
-            U64 => 0x03,
-            I8  => 0x04,
-            I16 => 0x05,
-            I32 => 0x06,
-            I64 => 0x07
+            self, { U8 => 0x00, U16 => 0x01, U32 => 0x02, U64 => 0x03,
+                    I8 => 0x04, I16 => 0x05, I32 => 0x06, I64 => 0x07
         })
     }
 
     /// Takes a slice of bytes and turns them into a MikuType.
-    fn from_bytes(bytes: &[u8]) -> Result<Self, crate::error::MikuError> 
+    fn from_bytes(bytes: &[u8]) -> Result<Self, MikuError> 
     where 
         Self: Sized
     {
         let type_identifier_byte = bytes[0];
-        let le_bytes = &bytes[1..bytes.len()];
+        let le_bytes = &bytes[1..];
 
-        match type_identifier_byte {
-            0x00 => Ok(Self::U8(u8::from_le_bytes(tools::convert_bytes(le_bytes)?))),
-            0x01 => Ok(Self::U16(u16::from_le_bytes(tools::convert_bytes(le_bytes)?))),
-            0x02 => Ok(Self::U32(u32::from_le_bytes(tools::convert_bytes(le_bytes)?))),
-            0x03 => Ok(Self::U64(u64::from_le_bytes(tools::convert_bytes(le_bytes)?))),
-            0x04 => Ok(Self::I8(i8::from_le_bytes(tools::convert_bytes(le_bytes)?))),
-            0x05 => Ok(Self::I16(i16::from_le_bytes(tools::convert_bytes(le_bytes)?))),
-            0x06 => Ok(Self::I32(i32::from_le_bytes(tools::convert_bytes(le_bytes)?))),
-            0x07 => Ok(Self::I64(i64::from_le_bytes(tools::convert_bytes(le_bytes)?))),
-            _ => Err(MikuError::UnknownTypeError(type_identifier_byte)),
-        }
+        match_from_bytes!(
+            type_identifier_byte, le_bytes, 
+            { 0x00 => U8 | u8, 0x01 => U16 | u16, 0x02 => U32 | u32, 0x03 => U64 | u64,
+              0x04 => I8 | i8, 0x05 => I16 | i16, 0x06 => I32 | i32, 0x07 => I64 | i64
+            })
     }
 }
 
