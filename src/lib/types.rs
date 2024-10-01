@@ -1,4 +1,4 @@
-use crate::{error::MikuError, tools, traits::AsBytes};
+use crate::{error::MikuError, tools};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MikuType {
@@ -46,7 +46,7 @@ macro_rules! match_to_bytes {
         
         match $self {
             $(
-                Self::$variant(value) => {
+                MikuType::$variant(value) => {
                     bytes.push($tag);
                     bytes.extend(value.to_le_bytes());
                 }
@@ -69,30 +69,31 @@ macro_rules! match_from_bytes {
     };
 }
 
-impl AsBytes for MikuType {
-    /// Takes a MikuType and turns it into a vector of bytes.
-    /// * First byte is the type and the rest are the value.
-    fn to_bytes(&self) -> Vec<u8> {
-        match_to_bytes!(
-            self, { U8 => 0x00, U16 => 0x01, U32 => 0x02, U64 => 0x03,
-                    I8 => 0x04, I16 => 0x05, I32 => 0x06, I64 => 0x07
+/// Takes a MikuType and turns it into a vector of bytes.
+/// * First byte is the type and the rest are the value.
+impl From<MikuType> for Vec<u8> {
+	fn from(value: MikuType) -> Self {
+		match_to_bytes!(
+            value, { U8 => 0x00, U16 => 0x01, U32 => 0x02, U64 => 0x03,
+                     I8 => 0x04, I16 => 0x05, I32 => 0x06, I64 => 0x07
         })
-    }
+	}
+}
 
-    /// Takes a slice of bytes and turns them into a MikuType.
-    fn from_bytes(bytes: &[u8]) -> Result<Self, MikuError> 
-    where 
-        Self: Sized
-    {
-        let type_identifier_byte = bytes[0];
-        let le_bytes = &bytes[1..];
+/// Takes a slice of bytes and turns them into a MikuType.
+impl TryFrom<&[u8]> for MikuType {
+	type Error = MikuError;
+
+	fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+		let type_identifier_byte = value[0];
+        let le_bytes = &value[1..];
 
         match_from_bytes!(
             type_identifier_byte, le_bytes, 
             { 0x00 => U8 | u8, 0x01 => U16 | u16, 0x02 => U32 | u32, 0x03 => U64 | u64,
               0x04 => I8 | i8, 0x05 => I16 | i16, 0x06 => I32 | i32, 0x07 => I64 | i64
-            })
-    }
+        })
+	}
 }
 
 impl MikuType {
