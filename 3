@@ -1,0 +1,20 @@
+use super::super::types::MikuType;
+
+#[test]
+fn convert_to_bytes_test() {
+    let a_u8 = MikuType::U8(69);
+    let a_u8_vec = Vec::from(a_u8);
+    assert_eq!(&vec![0x00, 0x45], &a_u8_vec);
+
+    let a_u16 = MikuType::U16(420);
+    let a_u16_vec = Vec::from(a_u16);
+    assert_eq!(&vec![0x01, 0xA4, 0x01], &a_u16_vec);
+
+    let a_u16 = MikuType::U16(420);
+    let a_u16_vec = Vec::from(a_u16);
+    assert_eq!(&vec![0x01, 0xA4, 0x01], &a_u16_vec);
+
+}
+
+#[test]
+fn convert_from_bytes_test() {}
