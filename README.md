@@ -4,6 +4,7 @@
 
 - A very simple and minimal virtual machine built in rust for fun.
 - Nothing serious and professional I'm just fucking around and finding out!
+- I'm doing this mainly to learn about rust too and it's features.
 
 ### Usage
 ```command

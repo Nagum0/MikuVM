@@ -1,4 +1,5 @@
 use crate::{error::MikuError, tools};
+use std::ops::{Add, Sub, Mul, Div};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MikuType {
@@ -14,34 +15,34 @@ pub enum MikuType {
     F64(f64),
 }
 
-/// Macro for implementing operations for MikuType.
-macro_rules! implement_operation {
-    ($method_name: ident, $op: tt) => {
-        pub fn $method_name(a: MikuType, b: MikuType) -> Result<MikuType, MikuError> {
-            match (stringify!($op), &b) {
-                ("/", MikuType::U8(0) | MikuType::U16(0) | MikuType::U32(0) | MikuType::U64(0) |
-                      MikuType::I8(0) | MikuType::I16(0) | MikuType::I32(0) | MikuType::I64(0) | 
-                      MikuType::F32(0.0) | MikuType::F64(0.0)) => {
-                        return Err(MikuError::DivisionByZeroError);
-                }
-                _ => {},
-            }
-
-            match (a, b) {
-                (Self::U8(a), Self::U8(b))   => Ok(Self::U8(a $op b)),
-                (Self::U16(a), Self::U16(b)) => Ok(Self::U16(a $op b)),
-                (Self::U32(a), Self::U32(b)) => Ok(Self::U32(a $op b)),
-                (Self::U64(a), Self::U64(b)) => Ok(Self::U64(a $op b)),
-                (Self::I8(a), Self::I8(b))   => Ok(Self::I8(a $op b)),
-                (Self::I16(a), Self::I16(b)) => Ok(Self::I16(a $op b)),
-                (Self::I32(a), Self::I32(b)) => Ok(Self::I32(a $op b)),
-                (Self::I64(a), Self::I64(b)) => Ok(Self::I64(a $op b)),
-                (Self::F32(a), Self::F32(b)) => Ok(Self::F32(a $op b)),
-                (Self::F64(a), Self::F64(b)) => Ok(Self::F64(a $op b)),
-                _ => Err(MikuError::UndefinedOperationBetweenTypesError(format!("{:?} {} {:?}", a, stringify!($op), b))),
+macro_rules! impl_arith_trait {
+    ($operation: ident, $method: ident) => {
+        impl $operation for MikuType {
+            type Output = Result<MikuType, MikuError>;
+            
+            fn $method(self, rhs: Self) -> Self::Output {
+                impl_arith_operations!(self, $method, rhs)
             }
         }
-    };
+    }
+}
+
+macro_rules! impl_arith_operations {
+    ($self: ident, $method: ident, $rhs: ident) => {
+        match ($self, $rhs) {
+            (MikuType::U8(a), MikuType::U8(b))   => Ok(MikuType::U8(a.$method(b))),
+            (MikuType::U16(a), MikuType::U16(b)) => Ok(MikuType::U16(a.$method(b))),
+            (MikuType::U32(a), MikuType::U32(b)) => Ok(MikuType::U32(a.$method(b))),
+            (MikuType::U64(a), MikuType::U64(b)) => Ok(MikuType::U64(a.$method(b))),
+            (MikuType::I8(a), MikuType::I8(b))   => Ok(MikuType::I8(a.$method(b))),
+            (MikuType::I16(a), MikuType::I16(b)) => Ok(MikuType::I16(a.$method(b))),
+            (MikuType::I32(a), MikuType::I32(b)) => Ok(MikuType::I32(a.$method(b))),
+            (MikuType::I64(a), MikuType::I64(b)) => Ok(MikuType::I64(a.$method(b))),
+            (MikuType::F32(a), MikuType::F32(b)) => Ok(MikuType::F32(a.$method(b))),
+            (MikuType::F64(a), MikuType::F64(b)) => Ok(MikuType::F64(a.$method(b))),
+            _ => Err(MikuError::UndefinedOperationBetweenTypesError(format!("{}({:?}, {:?})", stringify!(method), $self, $rhs))),
+        }
+    }
 }
 
 /// Macro for implementing to_bytes for MikuType.
@@ -103,28 +104,26 @@ impl TryFrom<&[u8]> for MikuType {
 	}
 }
 
-impl MikuType {
-    implement_operation!(add, +);
-    implement_operation!(subtract, -);
-    implement_operation!(multiply, *);
-    implement_operation!(divide, /);
+impl_arith_trait!(Add, add);
+impl_arith_trait!(Sub, sub);
+impl_arith_trait!(Mul, mul);
 
-    pub fn eq(a: MikuType, b: MikuType) -> Result<bool, MikuError> {
-        match (a, b) {
-            (Self::U8(a), Self::U8(b))   => Ok(a == b),
-            (Self::U16(a), Self::U16(b)) => Ok(a == b),
-            (Self::U32(a), Self::U32(b)) => Ok(a == b),
-            (Self::U64(a), Self::U64(b)) => Ok(a == b),
-            (Self::I8(a), Self::I8(b))   => Ok(a == b),
-            (Self::I16(a), Self::I16(b)) => Ok(a == b),
-            (Self::I32(a), Self::I32(b)) => Ok(a == b),
-            (Self::I64(a), Self::I64(b)) => Ok(a == b),
-            (Self::F32(a), Self::F32(b)) => Ok(a == b),
-            (Self::F64(a), Self::F64(b)) => Ok(a == b),
-            _ => Err(MikuError::UndefinedOperationBetweenTypesError(format!("Cannot check equality between {:?} and {:?}", a, b))),
+impl Div for MikuType {
+    type Output = Result<MikuType, MikuError>;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        if rhs == MikuType::U8(0) || rhs == MikuType::U16(0) || rhs == MikuType::U32(0) || rhs == MikuType::U64(0) ||
+            rhs == MikuType::I8(0) || rhs == MikuType::I16(0) || rhs == MikuType::I32(0) || rhs == MikuType::I64(0) ||
+            rhs == MikuType::F32(0.0) || rhs == MikuType::F64(0.0)
+        {
+            return Err(MikuError::DivisionByZeroError);
         }
-    }
 
+        impl_arith_operations!(self, div, rhs)
+    }
+}
+
+impl MikuType {
     /// Takes a slice of string slices and turns them into a MikuType.
     /// ! Temporary
     /// ### Panics
