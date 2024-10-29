@@ -1,11 +1,17 @@
+//! Builtin types.
+
 use crate::{error::MikuError, tools};
 use std::ops::{Add, Sub, Mul, Div};
 
+/// Each variant encapsulates a builtin type.
+/// Currently only supports numeric types.
+/// The U64 is also used as a pointer.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MikuType {
     U8(u8),
     U16(u16),
     U32(u32),
+    /// Also used as a pointer.
     U64(u64),
     I8(i8),
     I16(i16),
@@ -15,8 +21,16 @@ pub enum MikuType {
     F64(f64),
 }
 
+/// Used to implement the arithmetic traits: [Add], [Sub], [Mul]
+/// for [MikuType].
 macro_rules! impl_arith_trait {
     ($operation: ident, $method: ident) => {
+        /// [`$operation`] implementation for [`MikuType`].
+        /// ### Results in
+        /// - [`MikuType`]
+        /// - [`MikuError::UndefinedOperationBetweenTypesError`] is returned if the types of the two parameters
+        /// don't match.
+
         impl $operation for MikuType {
             type Output = Result<MikuType, MikuError>;
             
@@ -27,6 +41,7 @@ macro_rules! impl_arith_trait {
     }
 }
 
+/// Used for implementing the arithmetic operations for [MikuType].
 macro_rules! impl_arith_operations {
     ($self: ident, $method: ident, $rhs: ident) => {
         match ($self, $rhs) {
@@ -45,7 +60,7 @@ macro_rules! impl_arith_operations {
     }
 }
 
-/// Macro for implementing to_bytes for MikuType.
+/// Used for implementing `From<MikuType> for Vec<u8>` for [MikuType].
 macro_rules! match_to_bytes {
     ($self: expr, { $ ( $variant: ident => $tag: expr), * }) => {{
         let mut bytes = Vec::new();
@@ -63,7 +78,7 @@ macro_rules! match_to_bytes {
     }};
 }
 
-/// Macro for implementing from_bytes for MikuType.
+/// Used for implementing `TryFrom[&u8] for MikuType` for [MikuType].
 macro_rules! match_from_bytes {
     ($type_identifier_byte: expr, $le_bytes: expr, { $ ($tag: expr => $variant: ident | $type: ident), * }) => {
         match $type_identifier_byte {
@@ -75,8 +90,10 @@ macro_rules! match_from_bytes {
     };
 }
 
-/// Takes a MikuType and turns it into a vector of bytes.
-/// * First byte is the type and the rest are the value.
+/// Takes a [MikuType] and turns it into a vector ([Vec]) of bytes. 
+/// First byte is the type and the rest are the value.
+/// ### Returns
+/// - `Vec<u8>`
 impl From<MikuType> for Vec<u8> {
 	fn from(value: MikuType) -> Self {
 		match_to_bytes!(
@@ -87,7 +104,11 @@ impl From<MikuType> for Vec<u8> {
 	}
 }
 
-/// Takes a slice of bytes and turns them into a MikuType.
+/// Takes a slice of bytes ([u8]) and turns them into a [MikuType].
+/// ### Results in
+/// - [`MikuType`]
+/// - [`MikuError::UnknownTypeError`] if the first byte (the type identifier) is not recognized.
+/// - [`MikuError::BytesConversionError`] if the conversion failed.
 impl TryFrom<&[u8]> for MikuType {
 	type Error = MikuError;
 
@@ -108,6 +129,12 @@ impl_arith_trait!(Add, add);
 impl_arith_trait!(Sub, sub);
 impl_arith_trait!(Mul, mul);
 
+/// [Div] implementation for [MikuType].
+/// #### Results in
+/// - [`MikuType`]
+/// - [`MikuError::UndefinedOperationBetweenTypesError`] is returned if the types of the two parameters
+/// don't match.
+/// - [`MikuError::DivisionByZeroError`] is returned if the second parameter is 0.
 impl Div for MikuType {
     type Output = Result<MikuType, MikuError>;
 
