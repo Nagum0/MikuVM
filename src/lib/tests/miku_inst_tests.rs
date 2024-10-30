@@ -90,3 +90,31 @@ fn pop_test() {
     // Decoding test
     assert_eq!(Pop::new(), Pop::decode(&vec![0x01]).unwrap());
 }
+
+#[test]
+fn def_test() {
+    // Functionality test
+    let mut vm = MikuVM::new();
+    let i1: Box<dyn Inst> = Box::new(Def::new(MikuType::U32(420), 0));
+    let i2: Box<dyn Inst> = Box::new(Def::new(MikuType::U8(69), 1));
+    vm.push_inst(&i1);
+    vm.push_inst(&i2);
+    let status = vm.run_program();
+    assert!(status.is_ok());
+    assert_eq!(
+        vec![MikuType::U32(420), MikuType::U8(69)],
+        vm.data_mem()[0..2].to_vec()
+    );
+
+    // Encoding test
+    assert_eq!(
+        vec![0x02, 0x00, 0x45, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        i2.encode()
+    );
+
+    // Decoding test
+    assert_eq!(
+        Def::new(MikuType::U8(69), 1),
+        Def::decode(&vec![0x02, 0x00, 0x45, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]).unwrap()
+    );
+}

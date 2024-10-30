@@ -158,6 +158,21 @@ impl Div for MikuType {
 }
 
 impl MikuType {
+    /// Calculates the length of a specific MikuType when in byte form.
+    /// # Returns
+    /// - `Ok(size of the value)`
+    /// - [`MikuError::UnknownTypeError`] if the type is not recognized.
+    pub fn get_bytes_length(type_identifier_byte: u8) -> Result<usize, MikuError> {
+        match type_identifier_byte {
+            0x00 | 0x04 => Ok(2),
+            0x01 | 0x05 => Ok(3),
+            0x02 | 0x06 | 0x08 => Ok(5),
+            0x03 | 0x07 | 0x09 => Ok(9),
+            0x0A => Ok(1),
+            _ => Err(MikuError::UnknownTypeError(type_identifier_byte)),
+        }
+    }
+
     /// Takes a slice of string slices and turns them into a MikuType.
     /// ! Temporary
     /// ### Panics

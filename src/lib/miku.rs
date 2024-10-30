@@ -91,12 +91,11 @@ impl<'a> MikuVM<'a> {
         if address > DATA_END || address >= MEMORY_SIZE {
             return Err(MikuError::SegmentationFault);
         }
-
-        if self.memory[address] != MikuType::NULL {
-            return Err(MikuError::UsedDataSpace);
+        
+        match self.memory[address] {
+            MikuType::NULL => self.memory[address] = data,
+            _ => return Err(MikuError::UsedDataSpace),
         }
-
-        self.memory[address] = data;
 
         if address > self.largest_data_address {
             self.largest_data_address = address
@@ -155,6 +154,14 @@ impl<'a> MikuVM<'a> {
     /// Returns a clone of the vm's stack.
     pub fn stack(&self) -> Vec<MikuType> {
         self.stack.clone()
+    }
+    
+    /// The data memory.
+    /// The data memory holds the constants of the program.
+    /// It's represented as a [`Vec`] of [`MikuType`].
+    /// Returns a clone of the data sectiion of the memory.
+    pub fn data_mem(&self) -> Vec<MikuType> {
+        self.memory[DATA_START..DATA_END].to_vec()
     }
 
     /// The program counter.

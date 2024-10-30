@@ -5,10 +5,10 @@
 //! holds a vector of elements that implement this trait. This is achieved with
 //! dynamic dispatching.
 
-use std::fmt::Debug;
+use std::{fmt::Debug, usize};
 
 use crate::{
-    error::MikuError, miku::MikuVM, types::MikuType
+    error::MikuError, miku::MikuVM, tools, types::MikuType
 };
 
 /// # The instruction trait.
@@ -139,5 +139,65 @@ impl Inst for Pop {
             return Err(MikuError::BytesConversionError);
         }
         Ok(Pop::new())
+    }
+}
+
+/// # Def instruction.
+///
+/// It takes a [`MikuType`] and writes it to the .data section of the memory at the given address.
+///
+/// ## Information
+/// - Opcode: 2
+/// - Operands:
+///   - [`MikuType`]
+///   - address ([`prim@usize`])
+#[derive(Debug, PartialEq)]
+pub struct Def {
+    operand_1: MikuType,
+    opreand_2: usize,
+}
+
+impl Def {
+    pub fn new(operand_1: MikuType, opreand_2: usize) -> Self {
+        Self { operand_1, opreand_2 }
+    }
+}
+
+impl Inst for Def {
+    fn execute(&self, vm: &mut MikuVM) -> Result<(), MikuError> {
+        vm.inc_pc();
+        vm.define_data(self.operand_1, self.opreand_2)
+    }
+    
+    /// # Example
+    ///
+    /// ``` rust
+    /// let def = Def::new(MikuType::U8(69), 1);
+    /// let encoded_def = def.encode();
+    /// assert_eq!(
+    ///    vec![0x02, 0x00, 0x45, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+    ///    encoded_def
+    /// );
+    /// ```
+    fn encode(&self) -> Vec<u8> {
+        let opcode: u8 = 0x02;
+        let operand_1_bytes = Vec::from(self.operand_1);
+        let operand_2_bytes = self.opreand_2.to_le_bytes();
+        let mut encoded_def = vec![opcode];
+        encoded_def.extend(operand_1_bytes);
+        encoded_def.extend(operand_2_bytes);
+        encoded_def
+    }
+    
+    /// # Example
+    ///
+    /// ``` rust
+    /// assert_eq!(Def::new(MikuType::U8(69)), Def::decode(&vec![0x02, 0x00, 0x45, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]));
+    /// ```
+    fn decode(bytes: &[u8]) -> Result<Self, MikuError> where Self: Sized {
+        let operand_1_length: usize = MikuType::get_bytes_length(bytes[1])?;
+        let operand_1 = MikuType::try_from(&bytes[1..operand_1_length + 1])?;
+        let opreand_2 = usize::from_le_bytes(tools::convert_bytes(&bytes[operand_1_length + 1..bytes.len()])?);
+        Ok(Def::new(operand_1, opreand_2))
     }
 }
