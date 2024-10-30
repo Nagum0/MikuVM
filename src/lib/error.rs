@@ -13,4 +13,10 @@ pub enum MikuError {
     UndefinedOperationBetweenTypesError(String),
     #[error("DIVISION BY ZERO")]
     DivisionByZeroError,
+
+    /// Stack errors
+    #[error("STACK OVERFLOW")]
+    StackOverflow,
+    #[error("STACK UNDERFLOW")]
+    StackUnderflow,
 }

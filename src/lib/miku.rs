@@ -18,9 +18,7 @@
 //! ```
 
 use crate::{
-    error::MikuError,
-    types::MikuType,
-    inst::*};
+    error::MikuError, inst::*, types::MikuType, STACK_MAX_SIZE};
 
 /// The main structure of the virtual machine.
 #[derive(Debug)]
@@ -54,8 +52,8 @@ impl<'a> MikuVM<'a> {
     }
     
     /// Runs until the program terminates. Executes each instruction stored in program.
-    /// ### Result in
-    /// - ()
+    /// # Returns
+    /// - `Ok(())` if the execution doesn't hit an error.
     /// - [`MikuError`] if something goes wrong during execution.
     pub fn run_program(&mut self) -> Result<(), MikuError> {
         while self.pc != self.program.len() {
@@ -67,14 +65,36 @@ impl<'a> MikuVM<'a> {
     }
     
     /// Push a [`MikuType`] onto the stack.
-    pub fn stack_push(&mut self, stack_entry: MikuType) {
+    /// # Returns
+    /// - `Ok(())` on successful push.
+    /// - [`MikuError::StackOverflow`] if the stack is out of space.
+    pub fn stack_push(&mut self, stack_entry: MikuType) -> Result<(), MikuError> {
+        if self.stack.len() == STACK_MAX_SIZE {
+            return Err(MikuError::StackOverflow);           
+        }
+
         if self.stack_top == self.stack.len() {
             self.stack.push(stack_entry);
         }
         else {
             self.stack[self.stack_top] = stack_entry;
         }
+
         self.stack_top += 1;
+
+        Ok(())
+    }
+    
+    /// Pops the top entry off the stack. 
+    /// # Returns
+    /// - `Ok(())` on successful pop.
+    /// - [`MikuError::StackUnderflow`] if the stack is empty. 
+    pub fn stack_pop(&mut self) -> Result<(), MikuError> {
+        match self.stack.pop() {
+            Some(_) => self.stack_top -= 1,
+            None => return Err(MikuError::StackUnderflow)
+        }
+        Ok(())
     }
     
     /// Increment the program counter by 1.
