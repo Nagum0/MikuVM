@@ -8,9 +8,16 @@
 //! | ---- | ------ | --------- | --------- | --------- |
 //! | push | 0      | [`types::MikuType`] | - | - |
 //! | pop  | 1      | - | - | - |
+
+use std::usize;
  
 /// Constants
 pub const STACK_MAX_SIZE: usize = 1024;
+pub const MEMORY_SIZE: usize = 1024;
+pub const DATA_START: usize = 0;
+pub const DATA_END: usize = (MEMORY_SIZE / 100) * 40;
+pub const HEAP_START: usize = DATA_END + 1;
+pub const HEAP_END: usize = MEMORY_SIZE;
 
 pub mod error;
 pub mod tools;

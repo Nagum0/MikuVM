@@ -18,7 +18,7 @@
 //! ```
 
 use crate::{
-    error::MikuError, inst::*, types::MikuType, STACK_MAX_SIZE};
+    error::MikuError, inst::*, types::MikuType, DATA_END, DATA_START, MEMORY_SIZE, STACK_MAX_SIZE};
 
 /// The main structure of the virtual machine.
 #[derive(Debug)]
@@ -31,6 +31,15 @@ pub struct MikuVM<'a> {
     /// Points to the base of the current stackframe.
     stack_base: usize,
     
+    /// The RAM.
+    /// An array of [`MikuType`].
+    /// First 40% of it is the .data section reserved for constants.
+    /// The rest of the memory is the heap.
+    memory: [MikuType; MEMORY_SIZE],
+    /// Points to the next free location in the data section of the RAM.
+    /// Mainly used to format the debug info for the VM nicely.
+    data_ptr: usize,
+
     /// The loaded program.
     /// A [`Vec`] of `&'a Box<dyn Inst>` (a reference with lifetime a to a pointer that points to an object that implements the [Inst] trait)
     program: Vec<&'a Box<dyn Inst>>,
@@ -45,7 +54,9 @@ impl<'a> MikuVM<'a> {
         Self { 
             stack: Vec::new(), 
             stack_top: 0, 
-            stack_base: 0, 
+            stack_base: 0,
+            memory: [MikuType::NULL; MEMORY_SIZE],
+            data_ptr: DATA_START,
             program: Vec::new(), 
             pc: 0 
         }
@@ -60,6 +71,27 @@ impl<'a> MikuVM<'a> {
             let inst = self.program[self.pc];
             inst.execute(self)?;
         }
+
+        Ok(())
+    }
+    
+    /// Define data in the .data section of the RAM.
+    /// # Returns
+    /// - `Ok(())` if the data was successfully stored.
+    /// - [`MikuError::UsedDataSpace`] if the .data section isn't [`MikuType::NULL`] at the given
+    /// address.
+    /// - [`MikuError::SegmentationFault`] if the given address is outside of the .data section's
+    /// bounds or if the address is larger than the [`MEMORY_SIZE`].
+    pub fn define_data(&mut self, data: MikuType, address: usize) -> Result<(), MikuError> {
+        if address > DATA_END || address >= MEMORY_SIZE {
+            return Err(MikuError::SegmentationFault);
+        }
+
+        if self.memory[address] != MikuType::NULL {
+            return Err(MikuError::UsedDataSpace);
+        }
+
+        self.memory[address] = data;
 
         Ok(())
     }

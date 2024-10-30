@@ -19,6 +19,7 @@ pub enum MikuType {
     I64(i64),
     F32(f32),
     F64(f64),
+    NULL,
 }
 
 /// Used to implement the arithmetic traits: [Add], [Sub], [Mul]
@@ -61,6 +62,7 @@ macro_rules! impl_arith_operations {
 }
 
 /// Used for implementing `From<MikuType> for Vec<u8>` for [MikuType].
+/// Automatically handles the [`MikuType::NULL`] variant.
 macro_rules! match_to_bytes {
     ($self: expr, { $ ( $variant: ident => $tag: expr), * }) => {{
         let mut bytes = Vec::new();
@@ -72,6 +74,9 @@ macro_rules! match_to_bytes {
                     bytes.extend(value.to_le_bytes());
                 }
             )*
+            MikuType::NULL => {
+                bytes.push(0x0A);
+            }
         }
         
         bytes
@@ -79,12 +84,14 @@ macro_rules! match_to_bytes {
 }
 
 /// Used for implementing `TryFrom[&u8] for MikuType` for [MikuType].
+/// Automatically handles the `0x0A` case which is [`MikuType::NULL`].
 macro_rules! match_from_bytes {
     ($type_identifier_byte: expr, $le_bytes: expr, { $ ($tag: expr => $variant: ident | $type: ident), * }) => {
         match $type_identifier_byte {
             $(
                 $tag => Ok(Self::$variant($type::from_le_bytes(tools::convert_bytes($le_bytes)?))),
             )*
+            0x0A => Ok(Self::NULL),
             _ => Err(MikuError::UnknownTypeError($type_identifier_byte)),
         }
     };

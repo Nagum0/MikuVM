@@ -19,4 +19,10 @@ pub enum MikuError {
     StackOverflow,
     #[error("STACK UNDERFLOW")]
     StackUnderflow,
+
+    /// RAM errors
+    #[error("USED DATA SPACE")]
+    UsedDataSpace,
+    #[error("SEGMENTATION FAULT")]
+    SegmentationFault,
 }
