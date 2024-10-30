@@ -90,10 +90,12 @@ impl<'a> MikuVM<'a> {
     /// - `Ok(())` on successful pop.
     /// - [`MikuError::StackUnderflow`] if the stack is empty. 
     pub fn stack_pop(&mut self) -> Result<(), MikuError> {
-        match self.stack.pop() {
-            Some(_) => self.stack_top -= 1,
-            None => return Err(MikuError::StackUnderflow)
+        if self.stack_base == self.stack_top {
+            return Err(MikuError::StackUnderflow);
         }
+
+        self.stack_top -= 1;
+
         Ok(())
     }
     

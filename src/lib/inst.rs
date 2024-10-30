@@ -27,8 +27,7 @@ pub trait Inst: Debug {
     /// 
     /// # The preferred encoding format
     ///
-    /// - First byte indicates the length of the instruction (excluding the length indicator byte). 
-    /// - The second byte is the opcode.
+    /// - The first byte is the opcode.
     /// - The rest of the bytes are the operands.
     fn encode(&self) -> Vec<u8>;
     
@@ -71,26 +70,25 @@ impl Inst for Push {
     /// # Example
     /// ``` rust
     /// let push = Push::new(MikuType::U8(69)); 
-    /// let encoded_push = push.encode(); // This will result in: 0x03, 0x00, 0x00, 0x45
-
+    /// let encoded_push = push.encode();
+    /// assert_eq!(vec![0x00, 0x00, 0x45], encoded_push);
     /// ```
     fn encode(&self) -> Vec<u8> {
         let operand_bytes: Vec<u8> = Vec::from(self.operand);
         let opcode_byte: u8 = 0x00;
-        let instruction_length_byte: u8 = 1 + (operand_bytes.len() as u8);
-        let mut encoded_instruction = vec![instruction_length_byte, opcode_byte];
+        let mut encoded_instruction = vec![opcode_byte];
         encoded_instruction.extend(operand_bytes);
         encoded_instruction
     }
     
     /// # Example
     /// ``` rust
-    /// let encoded_push = vec![0x03, 0x00, 0x00, 0x45];
+    /// let encoded_push = vec![0x00, 0x00, 0x45];
     /// let decoded_push = Push::decode(&encoded_push).unwrap(); 
+    /// assert_eq!(Push::new(MikuType::U8(69)), decoded_push);
     /// ```
     fn decode(bytes: &[u8]) -> Result<Self, MikuError> where Self: Sized {
-        let instruction_length: usize = bytes[0] as usize;
-        let operand = MikuType::try_from(&bytes[2..instruction_length + 1])?;
+        let operand = MikuType::try_from(&bytes[1..bytes.len()])?;
         Ok(Push::new(operand))
     }
 }
@@ -118,12 +116,28 @@ impl Inst for Pop {
         vm.inc_pc();
         vm.stack_pop()
     }
-
+    
+    /// # Example
+    ///
+    /// ``` rust
+    /// let pop = Pop::new();
+    /// let encoded_pop = pop.encode();
+    /// assert_eq!(vec![0x01], encoded_pop);
+    /// ```
     fn encode(&self) -> Vec<u8> {
-        todo!()
+        let opcode_byte: u8 = 0x01;
+        vec![opcode_byte]
     }
-
-    fn decode(_bytes: &[u8]) -> Result<Self, MikuError> where Self: Sized {
-        todo!()
+    
+    /// # Example
+    ///
+    /// ``` rust
+    /// assert_eq!(Pop::new(), Pop::decode(&vec![0x01]).unwrap());
+    /// ```
+    fn decode(bytes: &[u8]) -> Result<Self, MikuError> where Self: Sized {
+        if bytes.len() != 1 {
+            return Err(MikuError::BytesConversionError);
+        }
+        Ok(Pop::new())
     }
 }
