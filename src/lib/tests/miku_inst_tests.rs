@@ -1,4 +1,4 @@
-use crate::{miku::MikuVM, types::MikuType, inst::*};
+use crate::{inst::*, miku::MikuVM, types::MikuType, DATA_START};
 
 #[test]
 fn push_test() {
@@ -11,7 +11,10 @@ fn push_test() {
     vm.push_inst(&i2);
     vm.push_inst(&i3);
     let _ = vm.run_program();
-    assert_eq!(vec![MikuType::U8(69), MikuType::I64(-728463721), MikuType::F32(8947.2932)], vm.stack());
+    assert_eq!(
+        vec![MikuType::U8(69), MikuType::I64(-728463721), MikuType::F32(8947.2932)], 
+        vm.stack()[0..3].to_vec()
+    );
     assert_eq!(3, vm.pc());
     assert_eq!(3, vm.stack_top());
     assert_eq!(0, vm.stack_base());
@@ -48,9 +51,8 @@ fn pop_test() {
     let _ = vm.run_program();
     assert_eq!(
         vec![MikuType::U8(69), MikuType::I64(-728463721), MikuType::F32(8947.2932)],
-        vm.stack()
+        vm.stack()[0..3].to_vec()
     );
-    assert_eq!(3, vm.stack().len());
     assert_eq!(4, vm.pc());
     assert_eq!(2, vm.stack_top());
     assert_eq!(0, vm.stack_base());
@@ -70,9 +72,8 @@ fn pop_test() {
     let _ = vm.run_program();
     assert_eq!(
         vec![MikuType::U8(69), MikuType::I64(-728463721), MikuType::I16(420)],
-        vm.stack()
+        vm.stack()[0..3].to_vec()
     );
-    assert_eq!(3, vm.stack().len());
     assert_eq!(5, vm.pc());
     assert_eq!(3, vm.stack_top());
     assert_eq!(0, vm.stack_base());
@@ -95,8 +96,8 @@ fn pop_test() {
 fn def_test() {
     // Functionality test
     let mut vm = MikuVM::new();
-    let i1: Box<dyn Inst> = Box::new(Def::new(MikuType::U32(420), 0));
-    let i2: Box<dyn Inst> = Box::new(Def::new(MikuType::U8(69), 1));
+    let i1: Box<dyn Inst> = Box::new(Def::new(MikuType::U32(420), DATA_START));
+    let i2: Box<dyn Inst> = Box::new(Def::new(MikuType::U8(69), DATA_START + 1));
     vm.push_inst(&i1);
     vm.push_inst(&i2);
     let status = vm.run_program();
@@ -109,7 +110,7 @@ fn def_test() {
     // Encoding test
     assert_eq!(
         vec![0x02, 0x00, 0x45, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-        i2.encode()
+        Def::new(MikuType::U8(69), 1).encode()
     );
 
     // Decoding test

@@ -18,15 +18,12 @@
 //! ```
 
 use crate::{
-    error::MikuError, inst::*, types::MikuType, DATA_END, DATA_START, HEAP_START, MEMORY_SIZE, STACK_MAX_SIZE};
+    error::MikuError, inst::*, types::MikuType, DATA_END, DATA_START, HEAP_END, HEAP_START, MEMORY_SIZE, STACK_END, STACK_START};
 use std::{fmt::Display, usize};
 
 /// The main structure of the virtual machine.
 #[derive(Debug)]
 pub struct MikuVM<'a> {
-    /// The stack.
-    /// It's represented as a [`Vec`] of [`MikuType`].
-    stack: Vec<MikuType>,
     /// Points to the top of the current stackframe.
     stack_top: usize,
     /// Points to the base of the current stackframe.
@@ -56,12 +53,11 @@ impl<'a> MikuVM<'a> {
     /// Creates a new empty vm.
     pub fn new() -> Self {
         Self { 
-            stack: Vec::new(), 
-            stack_top: 0, 
-            stack_base: 0,
+            stack_top: STACK_START, 
+            stack_base: STACK_START,
             memory: [MikuType::NULL; MEMORY_SIZE],
-            largest_data_address: DATA_START + 1,
-            largest_heap_address: HEAP_START + 1,
+            largest_data_address: DATA_START,
+            largest_heap_address: HEAP_START,
             program: Vec::new(), 
             pc: 0 
         }
@@ -88,7 +84,7 @@ impl<'a> MikuVM<'a> {
     /// - [`MikuError::SegmentationFault`] if the given address is outside of the .data section's
     /// bounds or if the address is larger than the [`MEMORY_SIZE`].
     pub fn define_data(&mut self, data: MikuType, address: usize) -> Result<(), MikuError> {
-        if address > DATA_END || address >= MEMORY_SIZE {
+        if address < DATA_START || address > DATA_END || address >= MEMORY_SIZE {
             return Err(MikuError::SegmentationFault);
         }
         
@@ -109,19 +105,12 @@ impl<'a> MikuVM<'a> {
     /// - `Ok(())` on successful push.
     /// - [`MikuError::StackOverflow`] if the stack is out of space.
     pub fn stack_push(&mut self, stack_entry: MikuType) -> Result<(), MikuError> {
-        if self.stack.len() == STACK_MAX_SIZE {
+        if self.stack_top == STACK_END {
             return Err(MikuError::StackOverflow);           
         }
 
-        if self.stack_top == self.stack.len() {
-            self.stack.push(stack_entry);
-        }
-        else {
-            self.stack[self.stack_top] = stack_entry;
-        }
-
+        self.memory[self.stack_top] = stack_entry;
         self.stack_top += 1;
-
         Ok(())
     }
     
@@ -135,7 +124,6 @@ impl<'a> MikuVM<'a> {
         }
 
         self.stack_top -= 1;
-
         Ok(())
     }
     
@@ -149,19 +137,24 @@ impl<'a> MikuVM<'a> {
         self.program.push(inst);
     }
 
-    /// The stack.
-    /// It's represented as a [`Vec`] of [`MikuType`].
-    /// Returns a clone of the vm's stack.
+    /// The stack memory.
+    /// Returns a clone of the stack segment of the memory as a [`Vec`] of [`MikuType`].
     pub fn stack(&self) -> Vec<MikuType> {
-        self.stack.clone()
+        self.memory[STACK_START..STACK_END].to_vec()
     }
     
     /// The data memory.
     /// The data memory holds the constants of the program.
-    /// It's represented as a [`Vec`] of [`MikuType`].
-    /// Returns a clone of the data sectiion of the memory.
+    /// Returns a clone of the data segment of the memory as a [`Vec`] of [`MikuType`].
     pub fn data_mem(&self) -> Vec<MikuType> {
         self.memory[DATA_START..DATA_END].to_vec()
+    }
+    
+    /// The heap memory.
+    /// The heap memroy holds the dynamically allocated data of the program.
+    /// Returns a clone of the heap segment of the memory as a [`Vec`] of [`MikuType`].
+    pub fn heap_mem(&self) -> Vec<MikuType> {
+        self.memory[HEAP_START..HEAP_END].to_vec()
     }
 
     /// The program counter.
@@ -183,6 +176,15 @@ impl<'a> MikuVM<'a> {
 
 impl Display for MikuVM<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "----------- VM -----------\n  Program: {:?}\n  Stack: {:?}\n  Data: {:?}\n  Heap: {:?}", self.program, self.stack, &self.memory[DATA_START..self.largest_data_address + 1], &self.memory[HEAP_START..self.largest_heap_address])
+        write!(f, 
+            "----------- VM -----------\n  
+            Program: {:?}\n  
+            Stack: {:?}\n  
+            Data: {:?}\n  
+            Heap: {:?}", 
+            self.program, 
+            &self.memory[STACK_START..self.stack_top], 
+            &self.memory[DATA_START..self.largest_data_address + 1], 
+            &self.memory[HEAP_START..self.largest_heap_address])
     }
 }
