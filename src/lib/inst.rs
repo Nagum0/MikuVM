@@ -1,372 +1,203 @@
-use crate::miku::Miku;
-use crate::stack::StackEntry;
+//! # Instructions for the virtual machine.
+//! 
+//! This is achieved in a more OOP style unlike [`MikuType`]. 
+//! Each instruction implements the [`Inst`] trait and the VM itself
+//! holds a vector of elements that implement this trait. This is achieved with
+//! dynamic dispatching.
 
-#[derive(Debug, Clone, Copy)]
-pub enum Inst {
-    // Stack operations
-    Push(StackEntry),
-    Pop,
-    DupT(usize),
-    Swap,
-    Plus,
-    Minus,
-    Mult,
-    Div,
-    Eq,
-    Jmp(usize),
-    JmpZ(usize),
-    JmpNZ(usize),
-    DupB(usize),
+use std::{fmt::Debug, usize};
 
-    // Functions
-    Call(usize), 
-    Ret,
-    RetV,
+use crate::{
+    error::MikuError, miku::MikuVM, tools, types::MikuType
+};
+
+/// # The instruction trait.
+///
+/// This trait needs to be implemented by anything that wants to be executed by [`MikuVM`].
+pub trait Inst: Debug {
+    /// This method gets called by [`MikuVM::run_program()`] when the instruction needs to be
+    /// executed.
+    /// # Returns
+    /// - `Ok(())` if the execution was successful.
+    /// - [`MikuError`] if something goes wrong during the execution of the instruction.
+    fn execute(&self, vm: &mut MikuVM) -> Result<(), MikuError>;
+
+    /// Encodes the instruction into a [`Vec`] of bytes. 
+    /// This is used for bytecode compilation.
+    /// 
+    /// # The preferred encoding format
+    ///
+    /// - The first byte is the opcode.
+    /// - The rest of the bytes are the operands.
+    fn encode(&self) -> Vec<u8>;
+    
+    /// Decodes the instruction from a slice of bytes.
+    /// This is used when running already compiled code.
+    ///
+    /// # Expected encoding format is the same as at [`Inst::encode`]
+    ///
+    /// # Returns
+    /// - `Ok(Self)` ([`Inst`]) if the decoding was successful.
+    /// - [`MikuError`] if something goes wrong during decoding.
+    fn decode(bytes: &[u8]) -> Result<Self, MikuError> where Self: Sized;
 }
 
-impl Inst {
-    /// Takes an Inst and turns it into a vector of bytes.
-    /// * First byte is the instruction number the rest are the operands values in bytes.
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::new();
+/// # Push instruction.
+///
+/// Pushes a [`MikuType`] onto the stack.
+///
+/// ## Information
+/// - Opcode: 0
+/// - Operands: 
+///   - [`MikuType`]
+#[derive(Debug, PartialEq)]
+pub struct Push {
+    operand: MikuType,
+}
 
-        match self {
-            Self::Push(operand) => {
-                bytes.push(0x00);
-                bytes.extend(operand.to_bytes());
-            }
-            Self::Pop => bytes.push(0x01),
-            Self::DupT(operand) => {
-                bytes.push(0x02);
-                bytes.extend(operand.to_le_bytes());
-            }
-            Self::Swap => bytes.push(0x03),
-            Self::Plus => bytes.push(0x04),
-            Self::Minus => bytes.push(0x05),
-            Self::Mult => bytes.push(0x06),
-            Self::Div => bytes.push(0x07),
-            Self::Eq => bytes.push(0x08),
-            Self::Jmp(operand) => {
-                bytes.push(0x09);
-                bytes.extend(operand.to_le_bytes());
-            }
-            Self::JmpZ(operand) => {
-                bytes.push(0x0A);
-                bytes.extend(operand.to_le_bytes());
-            }
-            Self::JmpNZ(operand) => {
-                bytes.push(0x0B);
-                bytes.extend(operand.to_le_bytes());
-            }
-            Self::DupB(operand) => {
-                bytes.push(0x0C);
-                bytes.extend(operand.to_le_bytes());
-            }
-            Self::Call(operand) => {
-                bytes.push(0x0D);
-                bytes.extend(operand.to_le_bytes());
-            }
-            Self::Ret => bytes.push(0x0E),
-            Self::RetV => bytes.push(0x0F),
-        }
-
-        bytes
+impl Push {
+    pub fn new(operand: MikuType) -> Self {
+        Self { operand }
     }
+}
 
-    /// Takes a slice of bytes and turns them into an Inst.
-    pub fn from_bytes(bytes: &[u8]) -> Inst {
-        match bytes[0] {
-            0x00 => Inst::Push(StackEntry::from_bytes(&bytes[1..bytes.len()])),
-            0x01 => Inst::Pop,
-            0x02 => Inst::DupT(usize::from_le_bytes(
-                bytes[1..bytes.len()]
-                    .try_into()
-                    .expect("COULD NOT CONVERT OPERAND AT DUP"),
-            )),
-            0x03 => Inst::Swap,
-            0x04 => Inst::Plus,
-            0x05 => Inst::Minus,
-            0x06 => Inst::Mult,
-            0x07 => Inst::Div,
-            0x08 => Inst::Eq,
-            0x09 => Inst::Jmp(usize::from_le_bytes(
-                bytes[1..bytes.len()]
-                    .try_into()
-                    .expect("COULD NOT CONVERT OPERAND AT JMP"),
-            )),
-            0x0A => Inst::JmpZ(usize::from_le_bytes(
-                bytes[1..bytes.len()]
-                    .try_into()
-                    .expect("COULD NOT CONVERT OPERAND AT JMPZ"),
-            )),
-            0x0B => Inst::JmpNZ(usize::from_le_bytes(
-                bytes[1..bytes.len()]
-                    .try_into()
-                    .expect("COULD NOT CONVERT OPERAND AT JMPNZ"),
-            )),
-            0x0C => Inst::DupB(usize::from_le_bytes(
-                bytes[1..bytes.len()]
-                    .try_into()
-                    .expect("COULD NOT CONVERT OPERAND AT DUPB"),
-            )),
-            0x0D => Inst::Call(usize::from_le_bytes(
-                bytes[1..bytes.len()]
-                    .try_into()
-                    .expect("COULD NOT CONVERT OPERAND AT CALL"),
-            )),
-            0x0E => Inst::Ret,
-            0x0F => Inst::RetV,
-            _ => panic!("UNKNOWN INSTRUCTION: {}", bytes[0]),
-        }
+impl Inst for Push {
+    fn execute(&self, vm: &mut MikuVM) -> Result<(), MikuError> {
+        vm.inc_pc();
+        vm.stack_push(self.operand)
     }
+    
+    /// # Example
+    /// ``` rust
+    /// let push = Push::new(MikuType::U8(69)); 
+    /// let encoded_push = push.encode();
+    /// assert_eq!(vec![0x00, 0x00, 0x45], encoded_push);
+    /// ```
+    fn encode(&self) -> Vec<u8> {
+        let operand_bytes: Vec<u8> = Vec::from(self.operand);
+        let opcode_byte: u8 = 0x00;
+        let mut encoded_instruction = vec![opcode_byte];
+        encoded_instruction.extend(operand_bytes);
+        encoded_instruction
+    }
+    
+    /// # Example
+    /// ``` rust
+    /// let encoded_push = vec![0x00, 0x00, 0x45];
+    /// let decoded_push = Push::decode(&encoded_push).unwrap(); 
+    /// assert_eq!(Push::new(MikuType::U8(69)), decoded_push);
+    /// ```
+    fn decode(bytes: &[u8]) -> Result<Self, MikuError> where Self: Sized {
+        let operand = MikuType::try_from(&bytes[1..bytes.len()])?;
+        Ok(Push::new(operand))
+    }
+}
 
-    pub fn execute(&self, miku: &mut Miku) {
-        match self {
-            Self::Push(operand) => {
-                if miku.stack_top == miku.stack.len() {
-                    miku.stack.push(*operand);
-                } else {
-                    miku.stack[miku.stack_top] = *operand;
-                }
+ 
+/// # Pop instruction.
+///
+/// Pops and entry off the stack.
+/// 
+/// ## Information
+/// - Opcode 1
+/// - Operands:
+///   - None
+#[derive(Debug, PartialEq)]
+pub struct Pop { }
 
-                miku.stack_top += 1;
-                miku.ins_ptr += 1;
-            }
-            Self::Pop => {
-                if miku.stack_top == miku.stack_base {
-                    panic!("STACK UNDERFLOW");
-                }
+impl Pop {
+    pub fn new() -> Self {
+        Self { }
+    }
+}
 
-                miku.stack_top -= 1;
-                miku.ins_ptr += 1;
-            }
-            Self::DupT(operand) => {
-                if miku.stack.is_empty() {
-                    panic!("STACK UNDERFLOW");
-                }
-
-                if *operand >= miku.stack_top {
-                    panic!("DUP INDEX OUT OF BOUNDS");
-                }
-
-                let offset = miku.stack_top - 1 - *operand;
-
-                if miku.stack_top == miku.stack.len() {
-                    miku.stack.push(miku.stack[offset]);
-                } else {
-                    miku.stack[miku.stack_top] = miku.stack[offset];
-                }
-
-                miku.stack_top += 1;
-                miku.ins_ptr += 1;
-            }
-            Self::Swap => {
-                if miku.stack_top < 2 {
-                    panic!("STACK UNDERFLOW");
-                }
-
-                miku.stack.swap(miku.stack_top - 1, miku.stack_top - 2);
-                miku.ins_ptr += 1;
-            }
-            Self::Plus => {
-                if miku.stack_top < 2 {
-                    panic!("STACK UNDERFLOW");
-                }
-
-                let a = miku.stack.pop().unwrap();
-                let b = miku.stack.pop().unwrap();
-                miku.stack.push(StackEntry::add(a, b));
-                miku.stack_top -= 1;
-                miku.ins_ptr += 1;
-            }
-            Self::Minus => {
-                if miku.stack_top < 2 {
-                    panic!("STACK UNDERFLOW");
-                }
-
-                let a = miku.stack.pop().unwrap();
-                let b = miku.stack.pop().unwrap();
-                miku.stack.push(StackEntry::subtract(a, b));
-                miku.stack_top -= 1;
-                miku.ins_ptr += 1;
-            }
-            Self::Mult => {
-                if miku.stack_top < 2 {
-                    panic!("STACK UNDERFLOW");
-                }
-
-                let a = miku.stack.pop().unwrap();
-                let b = miku.stack.pop().unwrap();
-                miku.stack.push(StackEntry::multiply(a, b));
-                miku.stack_top -= 1;
-                miku.ins_ptr += 1;
-            }
-            Self::Div => {
-                if miku.stack_top < 2 {
-                    panic!("STACK UNDERFLOW");
-                }
-
-                let a = miku.stack.pop().unwrap();
-                let b = miku.stack.pop().unwrap();
-                miku.stack.push(StackEntry::divide(a, b));
-                miku.stack_top -= 1;
-                miku.ins_ptr += 1;
-            }
-            Self::Eq => {
-                if miku.stack_top < 2 {
-                    panic!("STACK UNDERFLOW");
-                }
-
-                let a = miku.stack.pop().unwrap();
-                let b = miku.stack.pop().unwrap();
-
-                if StackEntry::eq(a, b) {
-                    miku.stack.push(StackEntry::U8(0));
-                } else {
-                    miku.stack.push(StackEntry::U8(1));
-                }
-
-                miku.stack_top -= 1;
-                miku.ins_ptr += 1;
-            }
-            Self::Jmp(operand) => {
-                if *operand >= miku.program.len() {
-                    panic!("JUMP OUT OF BOUNDS: {}", operand);
-                }
-
-                miku.ins_ptr = *operand;
-            }
-            Self::JmpZ(operand) => {
-                if *operand >= miku.program.len() {
-                    panic!("JUMP OUT OF BOUNDS: {}", operand);
-                }
-
-                let top = miku.stack.pop().unwrap();
-                miku.stack_top -= 1;
-
-                if StackEntry::eq(top, StackEntry::U8(0)) {
-                    miku.ins_ptr = *operand;
-                } else {
-                    miku.ins_ptr += 1;
-                }
-            }
-            Self::JmpNZ(operand) => {
-                if *operand >= miku.program.len() {
-                    panic!("JUMP OUT OF BOUNDS: {}", operand);
-                }
-
-                let top = miku.stack.pop().unwrap();
-                miku.stack_top -= 1;
-
-                if !StackEntry::eq(top, StackEntry::U8(0)) {
-                    miku.ins_ptr = *operand;
-                } else {
-                    miku.ins_ptr += 1;
-                }
-            }
-            Self::DupB(operand) => {
-                if miku.stack.is_empty() {
-                    panic!("STACK UNDERFLOW");
-                }
-
-                let index = miku.stack_base + *operand;
-
-                if index >= miku.stack_top {
-                    panic!("DUPB INDEX OUT OF BOUNDS");
-                }
-
-                if miku.stack.len() == miku.stack_top {
-                    miku.stack.push(miku.stack[index]);
-                } else {
-                    miku.stack[miku.stack_top] = miku.stack[index];
-                }
-
-                miku.stack_top += 1;
-                miku.ins_ptr += 1;
-            }
-            Self::Call(operand) => {
-                if *operand >= miku.program.len() {
-                    panic!("UNDEFINED CALL");
-                }
-
-                // Push the return address (ins_ptr + 1) onto the stack:
-                let return_address = StackEntry::U64((miku.ins_ptr + 1) as u64);
-
-                if miku.stack_top == miku.stack.len() {
-                    miku.stack.push(return_address);
-                } else {
-                    miku.stack[miku.stack_top] = return_address;
-                }
-
-                miku.stack_top += 1;
-
-                // Push current base ptr onto the stack:
-                let base_ptr = StackEntry::U64(miku.stack_base as u64);
-
-                if miku.stack_top == miku.stack.len() {
-                    miku.stack.push(base_ptr);
-                } else {
-                    miku.stack[miku.stack_top] = base_ptr;
-                }
-
-                miku.stack_top += 1;
-
-                // Changing the base to the current top:
-                miku.stack_base = miku.stack_top;
-
-                // Jumping to the first instruction of the function:
-                miku.ins_ptr = *operand;
-            }
-            Self::Ret => {
-                // Resetting the base pointer:
-                match miku.stack[miku.stack_top - 1] {
-                    StackEntry::U64(val) => miku.stack_base = val as usize,
-                    _ => panic!("EXPECTED U64 AS RETURN STACK BASE"),
-                }
-                miku.stack_top -= 1;
-
-                // Jumping back to return address:
-                match miku.stack[miku.stack_top - 1] {
-                    StackEntry::U64(addr) => miku.ins_ptr = addr as usize,
-                    _ => panic!("EXPECTED U64 AS RETURN ADDRESS"),
-                }
-                miku.stack_top -= 1;
-            } 
-            Self::RetV => {
-                // If there are no values on the stack frame:
-                if miku.stack_top == miku.stack_base {
-                    panic!("NO RETURN VALUE SPECIFIED");
-                }
-
-                // Saving the return value:
-                let return_value = miku.stack[miku.stack_top - 1];
-
-                // Clear the stack frame:
-                miku.stack_top -= miku.stack_top - miku.stack_base;
-
-                // Resetting the base pointer:
-                match miku.stack[miku.stack_top - 1] {
-                    StackEntry::U64(val) => miku.stack_base = val as usize,
-                    _ => panic!("EXPECTED U64 AS RETURN STACK BASE"),
-                }
-                miku.stack_top -= 1;
-
-                // Jumping back to return address:
-                match miku.stack[miku.stack_top - 1] {
-                    StackEntry::U64(addr) => miku.ins_ptr = addr as usize,
-                    _ => panic!("EXPECTED U64 AS RETURN ADDRESS"),
-                }
-                miku.stack_top -= 1;
-
-                // Pushing the return value onto the stack: 
-                if miku.stack_top == miku.stack.len() {
-                    miku.stack.push(return_value);
-                } else {
-                    miku.stack[miku.stack_top] = return_value;
-                }
-
-                miku.stack_top += 1;
-            }
+impl Inst for Pop {
+    fn execute(&self, vm: &mut MikuVM) -> Result<(), MikuError> {
+        vm.inc_pc();
+        vm.stack_pop()
+    }
+    
+    /// # Example
+    ///
+    /// ``` rust
+    /// let pop = Pop::new();
+    /// let encoded_pop = pop.encode();
+    /// assert_eq!(vec![0x01], encoded_pop);
+    /// ```
+    fn encode(&self) -> Vec<u8> {
+        let opcode_byte: u8 = 0x01;
+        vec![opcode_byte]
+    }
+    
+    /// # Example
+    ///
+    /// ``` rust
+    /// assert_eq!(Pop::new(), Pop::decode(&vec![0x01]).unwrap());
+    /// ```
+    fn decode(bytes: &[u8]) -> Result<Self, MikuError> where Self: Sized {
+        if bytes.len() != 1 {
+            return Err(MikuError::BytesConversionError);
         }
+        Ok(Pop::new())
+    }
+}
+
+/// # Def instruction.
+///
+/// It takes a [`MikuType`] and writes it to the .data section of the memory at the given address.
+///
+/// ## Information
+/// - Opcode: 2
+/// - Operands:
+///   - [`MikuType`]
+///   - address ([`prim@usize`])
+#[derive(Debug, PartialEq)]
+pub struct Def {
+    operand_1: MikuType,
+    opreand_2: usize,
+}
+
+impl Def {
+    pub fn new(operand_1: MikuType, opreand_2: usize) -> Self {
+        Self { operand_1, opreand_2 }
+    }
+}
+
+impl Inst for Def {
+    fn execute(&self, vm: &mut MikuVM) -> Result<(), MikuError> {
+        vm.inc_pc();
+        vm.define_data(self.operand_1, self.opreand_2)
+    }
+    
+    /// # Example
+    ///
+    /// ``` rust
+    /// let def = Def::new(MikuType::U8(69), 1);
+    /// let encoded_def = def.encode();
+    /// assert_eq!(
+    ///    vec![0x02, 0x00, 0x45, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+    ///    encoded_def
+    /// );
+    /// ```
+    fn encode(&self) -> Vec<u8> {
+        let opcode: u8 = 0x02;
+        let operand_1_bytes = Vec::from(self.operand_1);
+        let operand_2_bytes = self.opreand_2.to_le_bytes();
+        let mut encoded_def = vec![opcode];
+        encoded_def.extend(operand_1_bytes);
+        encoded_def.extend(operand_2_bytes);
+        encoded_def
+    }
+    
+    /// # Example
+    ///
+    /// ``` rust
+    /// assert_eq!(Def::new(MikuType::U8(69)), Def::decode(&vec![0x02, 0x00, 0x45, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]));
+    /// ```
+    fn decode(bytes: &[u8]) -> Result<Self, MikuError> where Self: Sized {
+        let operand_1_length: usize = MikuType::get_bytes_length(bytes[1])?;
+        let operand_1 = MikuType::try_from(&bytes[1..operand_1_length + 1])?;
+        let opreand_2 = usize::from_le_bytes(tools::convert_bytes(&bytes[operand_1_length + 1..bytes.len()])?);
+        Ok(Def::new(operand_1, opreand_2))
     }
 }

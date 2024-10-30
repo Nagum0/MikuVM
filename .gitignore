@@ -1,4 +1,4 @@
 target/
-tests/
+local_tests/
 *.mm
 *.masm
