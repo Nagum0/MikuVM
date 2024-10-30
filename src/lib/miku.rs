@@ -18,7 +18,8 @@
 //! ```
 
 use crate::{
-    error::MikuError, inst::*, types::MikuType, DATA_END, DATA_START, MEMORY_SIZE, STACK_MAX_SIZE};
+    error::MikuError, inst::*, types::MikuType, DATA_END, DATA_START, HEAP_START, MEMORY_SIZE, STACK_MAX_SIZE};
+use std::{fmt::Display, usize};
 
 /// The main structure of the virtual machine.
 #[derive(Debug)]
@@ -36,9 +37,12 @@ pub struct MikuVM<'a> {
     /// First 40% of it is the .data section reserved for constants.
     /// The rest of the memory is the heap.
     memory: [MikuType; MEMORY_SIZE],
-    /// Points to the next free location in the data section of the RAM.
-    /// Mainly used to format the debug info for the VM nicely.
-    data_ptr: usize,
+    /// This points to the largest address where a non NULL value is stored in the .data section of
+    /// the memory.
+    largest_data_address: usize,
+    /// This points to the largest address where a non NULL value is stored in the heap section of
+    /// the memory.
+    largest_heap_address: usize,
 
     /// The loaded program.
     /// A [`Vec`] of `&'a Box<dyn Inst>` (a reference with lifetime a to a pointer that points to an object that implements the [Inst] trait)
@@ -56,7 +60,8 @@ impl<'a> MikuVM<'a> {
             stack_top: 0, 
             stack_base: 0,
             memory: [MikuType::NULL; MEMORY_SIZE],
-            data_ptr: DATA_START,
+            largest_data_address: DATA_START + 1,
+            largest_heap_address: HEAP_START + 1,
             program: Vec::new(), 
             pc: 0 
         }
@@ -92,6 +97,10 @@ impl<'a> MikuVM<'a> {
         }
 
         self.memory[address] = data;
+
+        if address > self.largest_data_address {
+            self.largest_data_address = address
+        }
 
         Ok(())
     }
@@ -162,5 +171,11 @@ impl<'a> MikuVM<'a> {
     /// Returns a pointer to the base of the current stackframe.
     pub fn stack_base(&self) -> usize {
         self.stack_base
+    }
+}
+
+impl Display for MikuVM<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "----------- VM -----------\n  Program: {:?}\n  Stack: {:?}\n  Data: {:?}\n  Heap: {:?}", self.program, self.stack, &self.memory[DATA_START..self.largest_data_address + 1], &self.memory[HEAP_START..self.largest_heap_address])
     }
 }

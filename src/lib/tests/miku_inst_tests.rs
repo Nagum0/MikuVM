@@ -50,7 +50,6 @@ fn pop_test() {
         vec![MikuType::U8(69), MikuType::I64(-728463721), MikuType::F32(8947.2932)],
         vm.stack()
     );
-    println!("{:?}", vm.stack());
     assert_eq!(3, vm.stack().len());
     assert_eq!(4, vm.pc());
     assert_eq!(2, vm.stack_top());
@@ -73,7 +72,6 @@ fn pop_test() {
         vec![MikuType::U8(69), MikuType::I64(-728463721), MikuType::I16(420)],
         vm.stack()
     );
-    println!("{:?}", vm.stack());
     assert_eq!(3, vm.stack().len());
     assert_eq!(5, vm.pc());
     assert_eq!(3, vm.stack_top());
