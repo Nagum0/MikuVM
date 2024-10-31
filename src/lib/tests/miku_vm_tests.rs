@@ -31,3 +31,10 @@ fn deref_address_test() {
     let read_data = vm.deref_ptr(MikuType::U64(1024));
     assert!(read_data.is_err());
 }
+
+#[test]
+fn registers_test() {
+    let vm = MikuVM::new();
+    let registers = vm.registers();
+    assert_eq!(6, registers.len());
+}

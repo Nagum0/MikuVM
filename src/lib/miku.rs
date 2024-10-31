@@ -18,7 +18,7 @@
 //! ```
 
 use crate::{
-    error::MikuError, inst::*, types::MikuType, DATA_END, DATA_START, HEAP_END, HEAP_START, MEMORY_SIZE, STACK_END, STACK_START};
+    error::MikuError, inst::*, register::Register, types::MikuType, DATA_END, DATA_START, HEAP_END, HEAP_START, MEMORY_SIZE, STACK_END, STACK_START, REGISTER_COUNT};
 use std::{fmt::Display, usize};
 
 /// The main structure of the virtual machine.
@@ -29,6 +29,9 @@ pub struct MikuVM<'a> {
     /// Points to the base of the current stackframe.
     stack_base: usize,
     
+    /// Registers.
+    registers: [Register; REGISTER_COUNT],
+
     /// The RAM.
     /// An array of [`MikuType`].
     /// First 40% of it is the .data section reserved for constants.
@@ -52,9 +55,16 @@ pub struct MikuVM<'a> {
 impl<'a> MikuVM<'a> {
     /// Creates a new empty vm.
     pub fn new() -> Self {
+        let mut registers: [Register; REGISTER_COUNT] = [Register::new(0, MikuType::NULL); REGISTER_COUNT];
+
+        for i in 0..REGISTER_COUNT {
+            registers[i] = Register::new(i as u8, MikuType::NULL);
+        }
+
         Self { 
             stack_top: STACK_START, 
             stack_base: STACK_START,
+            registers,
             memory: [MikuType::NULL; MEMORY_SIZE],
             largest_data_address: DATA_START,
             largest_heap_address: HEAP_START,
@@ -159,6 +169,14 @@ impl<'a> MikuVM<'a> {
     /// Pushes an instruciton into the program.
     pub fn push_inst(&mut self, inst: &'a Box<dyn Inst>) {
         self.program.push(inst);
+    }
+    
+    /// Returns a clone of the array holding the registers.
+    ///
+    /// Registers are represented as an array of type [`Register`] with the
+    /// size of [`REGISTER_COUNT`].
+    pub fn registers(&self) -> [Register; REGISTER_COUNT] {
+        self.registers.clone()
     }
 
     /// The stack memory.
