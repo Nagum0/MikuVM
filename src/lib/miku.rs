@@ -76,7 +76,8 @@ impl<'a> MikuVM<'a> {
         Ok(())
     }
     
-    /// Define data in the .data section of the RAM.
+    /// Write data in the .data section of the RAM.
+    /// 
     /// # Returns
     /// - `Ok(())` if the data was successfully stored.
     /// - [`MikuError::UsedDataSpace`] if the .data section isn't [`MikuType::NULL`] at the given
@@ -99,8 +100,31 @@ impl<'a> MikuVM<'a> {
 
         Ok(())
     }
+
+    /// Dereference a the given address.
+    /// Reads the contents of the RAM at the given address and returns a copy 
+    /// of the read data.
+    ///
+    /// # Returns
+    /// - `Ok(MikuType)` on successful read.
+    /// - [`MikuError::SegmentationFault`] if the address is out of bounds or the pointer is [`MikuType::NULL`].
+    /// - [`MikuError::InvalidPointerType`] if the pointer isn't a [`MikuType::U64`].
+    pub fn deref_ptr(&self, ptr: MikuType) -> Result<MikuType, MikuError> {
+        let address: usize = match ptr {
+            MikuType::U64(address) => address as usize,
+            MikuType::NULL => return Err(MikuError::SegmentationFault),
+            _ => return Err(MikuError::InvalidPointerType(ptr)),
+        };
+
+        if address >= MEMORY_SIZE {
+            return Err(MikuError::SegmentationFault);
+        }
+
+        Ok(self.memory[address])
+    }
     
     /// Push a [`MikuType`] onto the stack.
+    ///
     /// # Returns
     /// - `Ok(())` on successful push.
     /// - [`MikuError::StackOverflow`] if the stack is out of space.

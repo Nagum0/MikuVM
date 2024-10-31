@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::types::MikuType;
+
 #[derive(Debug, Error)]
 pub enum MikuError {
     /// Type errors
@@ -25,4 +27,6 @@ pub enum MikuError {
     UsedDataSpace,
     #[error("SEGMENTATION FAULT")]
     SegmentationFault,
+    #[error("INVALID POINTER TYPE: {:?}", ._0)]
+    InvalidPointerType(MikuType),
 }
