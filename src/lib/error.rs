@@ -29,4 +29,8 @@ pub enum MikuError {
     SegmentationFault,
     #[error("INVALID POINTER TYPE: {:?}", ._0)]
     InvalidPointerType(MikuType),
+
+    /// Register errors
+    #[error("UNKNOWN REGISTER: {}", ._0)]
+    UnknownRegister(usize),
 }

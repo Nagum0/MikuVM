@@ -34,7 +34,20 @@ fn deref_address_test() {
 
 #[test]
 fn registers_test() {
-    let vm = MikuVM::new();
+    let mut vm = MikuVM::new();
     let registers = vm.registers();
     assert_eq!(6, registers.len());
+
+    let _ = vm.set_register(0, MikuType::I32(-100));
+    let reg_val = vm.read_register(0).unwrap();
+    assert_eq!(MikuType::I32(-100), reg_val);
+
+    let reg_val = vm.read_register(5).unwrap();
+    assert_eq!(MikuType::NULL, reg_val);
+
+    let status = vm.set_register(6, MikuType::U8(69));
+    assert!(status.is_err());
+
+    let status = vm.read_register(7);
+    assert!(status.is_err());
 }

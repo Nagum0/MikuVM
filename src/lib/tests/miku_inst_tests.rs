@@ -119,3 +119,16 @@ fn def_test() {
         Def::decode(&vec![0x02, 0x00, 0x45, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]).unwrap()
     );
 }
+
+#[test]
+fn set_test() {
+    // Functionality test
+    let mut vm = MikuVM::new();
+    let i1: Box<dyn Inst> = Box::new(Set::new(0, either::Either::Left(MikuType::U8(69)), false));
+    vm.push_inst(&i1);
+    let _ = vm.run_program();
+    assert_eq!(
+        MikuType::U8(69),
+        vm.read_register(0).unwrap()
+    );
+}

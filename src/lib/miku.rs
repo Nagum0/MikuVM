@@ -161,6 +161,33 @@ impl<'a> MikuVM<'a> {
         Ok(())
     }
     
+    /// Set a register by it's identifier.
+    ///
+    /// # Returns
+    /// - `Ok(())` if the set was successful.
+    /// - [`MikuError::UnknownRegister`] if the ident was out of bounds.
+    pub fn set_register(&mut self, ident: usize, value: MikuType) -> Result<(), MikuError> {
+        if ident >= REGISTER_COUNT {
+            return Err(MikuError::UnknownRegister(ident));
+        }
+            
+        self.registers[ident].set(value);
+        Ok(())
+    }
+    
+    /// Read the value of the given register.
+    ///
+    /// # Returns
+    /// - `Ok(MikuType)` if the read was successful.
+    /// - [`MikuError::UnknownRegister`] if the ident was out of bounds.
+    pub fn read_register(&self, ident: usize) -> Result<MikuType, MikuError> {
+        if ident >= REGISTER_COUNT {
+            return Err(MikuError::UnknownRegister(ident));
+        }
+
+        Ok(self.registers[ident].value())
+    }
+
     /// Increment the program counter by 1.
     pub fn inc_pc(&mut self) {
         self.pc += 1;
@@ -175,6 +202,7 @@ impl<'a> MikuVM<'a> {
     ///
     /// Registers are represented as an array of type [`Register`] with the
     /// size of [`REGISTER_COUNT`].
+    /// Each register is at the location corresponding to it's identifier.
     pub fn registers(&self) -> [Register; REGISTER_COUNT] {
         self.registers.clone()
     }

@@ -42,6 +42,7 @@
 //! | push | 0      | [`types::MikuType`] | - | - |
 //! | pop  | 1      | - | - | - |
 //! | def  | 2      | [`types::MikuType`] | address | - |
+//! | set  | 3      | register identifier ([`prim@usize`]) | [`types::MikuType`] or register identifier ([`prim@usize`]) | - |
 
 use std::usize;
  

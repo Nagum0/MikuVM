@@ -17,3 +17,4 @@ path = "./src/bin/masm.rs"
 
 [dependencies]
 thiserror = "1.0.64"
+either = "1.13.0"
